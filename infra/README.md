@@ -61,6 +61,21 @@ aws ecs update-service --cluster sift --service sift --force-new-deployment
 
 Everyone signed in with the old passphrase is signed out by that, including you.
 
+## The model key
+
+The deployed service judges papers with Jev (`SIFT_ASKER=typesafe` in the task
+definition), which needs a TypeSafe API key. It lives in Secrets Manager next to
+the passphrase hash and reaches the container as `TYPESAFE_API_KEY`:
+
+```hcl
+# infra/terraform.tfvars
+typesafe_api_key = "..."
+```
+
+There is no default, for the same reason as the passphrase: a stack that
+silently fell back to the offline fake would rank papers by noise. Rotating is
+the same too: replace the value, `terraform apply`, and force a new deployment.
+
 ## First deployment
 
 ```sh

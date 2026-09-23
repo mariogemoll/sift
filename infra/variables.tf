@@ -64,3 +64,18 @@ variable "passphrase_hash" {
     error_message = "Expected the output of `sift passphrase`, which starts with scrypt$."
   }
 }
+
+variable "typesafe_api_key" {
+  description = <<-DESC
+    API key for TypeSafe. The deployed service judges papers with Jev, which
+    needs it; there is no default, so a stack is never deployed judging with
+    the fake asker by accident.
+  DESC
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(trimspace(var.typesafe_api_key)) > 0
+    error_message = "Set typesafe_api_key in terraform.tfvars."
+  }
+}

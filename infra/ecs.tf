@@ -46,6 +46,7 @@ resource "aws_iam_role_policy" "execution_secrets" {
       Resource = [
         aws_secretsmanager_secret.database_url.arn,
         aws_secretsmanager_secret.passphrase_hash.arn,
+        aws_secretsmanager_secret.typesafe_api_key.arn,
       ]
     }]
   })
@@ -88,13 +89,21 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
 
-    # The browser reaches the edge over HTTPS, so the session cookie is
-    # marked Secure even though CloudFront talks to the load balancer in plain
-    # HTTP inside the VPC.
-    environment = [{
-      name  = "SIFT_COOKIE_SECURE"
-      value = "true"
-    }]
+    environment = [
+      # The browser reaches the edge over HTTPS, so the session cookie is
+      # marked Secure even though CloudFront talks to the load balancer in
+      # plain HTTP inside the VPC.
+      {
+        name  = "SIFT_COOKIE_SECURE"
+        value = "true"
+      },
+      # Judge with Jev rather than the offline fake, which also turns on PDF
+      # downloads for papers that pass the screen.
+      {
+        name  = "SIFT_ASKER"
+        value = "typesafe"
+      },
+    ]
 
     secrets = [
       {
@@ -104,6 +113,10 @@ resource "aws_ecs_task_definition" "api" {
       {
         name      = "SIFT_PASSPHRASE_HASH"
         valueFrom = aws_secretsmanager_secret.passphrase_hash.arn
+      },
+      {
+        name      = "TYPESAFE_API_KEY"
+        valueFrom = aws_secretsmanager_secret.typesafe_api_key.arn
       },
     ]
 
@@ -197,6 +210,7 @@ resource "aws_ecs_service" "api" {
     aws_lb_listener.http,
     aws_secretsmanager_secret_version.database_url,
     aws_secretsmanager_secret_version.passphrase_hash,
+    aws_secretsmanager_secret_version.typesafe_api_key,
   ]
 
   lifecycle {

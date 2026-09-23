@@ -305,6 +305,9 @@ registers a task definition revision, runs migrations as a one-off task, rolls
 the service and publishes the site. GitHub Actions authenticates by OIDC; there
 are no AWS keys in the repository.
 
+The deployed service judges with Jev; its TypeSafe key sits in Secrets
+Manager beside the passphrase hash, both from the gitignored `terraform.tfvars`.
+
 `infra/README.md` has the runbook: first deployment, wiring up CI, attaching a
 custom domain, and tearing the whole thing down.
 
