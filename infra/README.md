@@ -90,6 +90,20 @@ gh variable set AWS_SITE_BUCKET     --body "$(terraform output -raw site_bucket)
 gh variable set AWS_DISTRIBUTION_ID --body "$(terraform output -raw cloudfront_distribution_id)"
 ```
 
+The deploy role trusts exactly one `sub` claim from GitHub's job token, and this
+repository has **immutable subject claims** enabled, so that claim names the
+owner and the repository by numeric ID rather than by name — a rename or a
+transfer cannot hand the role to whoever picks up the old name. Point
+`github_oidc_subject` at the prefix the repository actually uses:
+
+```sh
+gh api /repos/OWNER/REPO/actions/oidc/customization/sub
+```
+
+Get this wrong and every deploy stops at its first step, after two minutes of
+retries, with `Not authorized to perform sts:AssumeRoleWithWebIdentity` — which
+says nothing about which claim failed to match.
+
 After that, deploy from the Actions tab, or:
 
 ```sh
