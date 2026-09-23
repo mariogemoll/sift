@@ -175,6 +175,19 @@ gh workflow run Deploy
 The workflow reads the family's latest revision, so it builds on the one
 Terraform just registered.
 
+## Emptying the data
+
+```sh
+./reset-data.sh
+```
+
+Truncates papers, batches, items, texts, judgments and verdicts, leaving the
+schema, the migration revision and the secrets alone. The database is not
+publicly reachable, so the script runs as a one-off Fargate task on the
+service's current task definition and in its network, the way the deploy runs
+migrations, then prints the exit code and the paper count before and after.
+The running service keeps going and simply finds nothing to do.
+
 ## Tearing it down
 
 ```sh
