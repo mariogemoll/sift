@@ -23,11 +23,12 @@ data "aws_iam_policy_document" "github_assume" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Only the default branch of this one repository.
+    # Only the default branch of this one repository, named by ID rather than
+    # by name — see the variable for why.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values   = [var.github_oidc_subject]
     }
   }
 }

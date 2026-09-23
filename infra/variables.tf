@@ -33,10 +33,21 @@ variable "desired_count" {
 }
 
 
-variable "github_repo" {
-  description = "owner/name of the repository allowed to deploy."
+variable "github_oidc_subject" {
+  description = <<-DESC
+    The `sub` claim in the token GitHub Actions presents, and the only thing the
+    deploy role trusts. This repository has immutable subject claims enabled, so
+    the prefix names the owner and the repository by numeric ID rather than by
+    name: renaming or transferring either cannot hand the role to someone else.
+    Read the prefix for a repository with
+
+      gh api /repos/OWNER/REPO/actions/oidc/customization/sub
+
+    and keep the `:ref:refs/heads/main` suffix, which is what restricts deploys
+    to the default branch.
+  DESC
   type        = string
-  default     = "mariogemoll/sift"
+  default     = "repo:mariogemoll@627106/sift@1383523523:ref:refs/heads/main"
 }
 
 variable "passphrase_hash" {
