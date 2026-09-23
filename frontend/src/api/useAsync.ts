@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 
+import { messageOf } from "./client";
+
 export type Async<T> =
   | { status: "loading" }
   | { status: "ready"; value: T }
-  | { status: "failed"; message: string };
-
-const messageOf = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
+  | { status: "failed"; message: string; error: unknown };
 
 /**
  * Run `load` once on mount and report which of the three states we are in.
  *
  * `load` is read on the first render only; a result arriving after unmount is
- * dropped rather than written to a gone component.
+ * dropped rather than written to a gone component. The failure keeps the thrown
+ * value as well as its message, so a caller can tell one kind apart from another.
  */
 export function useAsync<T>(load: () => Promise<T>): Async<T> {
   const [state, setState] = useState<Async<T>>({ status: "loading" });
@@ -24,7 +24,7 @@ export function useAsync<T>(load: () => Promise<T>): Async<T> {
         if (live) setState({ status: "ready", value });
       },
       (error: unknown) => {
-        if (live) setState({ status: "failed", message: messageOf(error) });
+        if (live) setState({ status: "failed", message: messageOf(error), error });
       },
     );
     return () => {

@@ -4,6 +4,28 @@
  */
 
 export interface paths {
+    "/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Session
+         * @description Whether the cookie in hand is good. The login page asks this on load.
+         */
+        get: operations["read_session_auth_session_get"];
+        put?: never;
+        /** Create Session */
+        post: operations["create_session_auth_session_post"];
+        /** Delete Session */
+        delete: operations["delete_session_auth_session_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -91,6 +113,27 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * SessionStatus
+         * @description Whether the caller is signed in, and whether signing in is even possible.
+         *
+         *     `configured` is false when the deployment has no passphrase hash, so the
+         *     login page can say that rather than blame the phrase you typed.
+         */
+        SessionStatus: {
+            /** Authenticated */
+            authenticated: boolean;
+            /** Configured */
+            configured: boolean;
+        };
+        /**
+         * SignIn
+         * @description The one credential there is.
+         */
+        SignIn: {
+            /** Passphrase */
+            passphrase: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -113,6 +156,77 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    read_session_auth_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStatus"];
+                };
+            };
+        };
+    };
+    create_session_auth_session_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_session_auth_session_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;

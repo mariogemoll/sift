@@ -17,6 +17,23 @@ class HealthResponse(BaseModel):
     )
 
 
+class SignIn(BaseModel):
+    """The one credential there is."""
+
+    passphrase: str = Field(min_length=1)
+
+
+class SessionStatus(BaseModel):
+    """Whether the caller is signed in, and whether signing in is even possible.
+
+    `configured` is false when the deployment has no passphrase hash, so the
+    login page can say that rather than blame the phrase you typed.
+    """
+
+    authenticated: bool
+    configured: bool
+
+
 class PaperOut(BaseModel):
     arxiv_id: str
     title: str

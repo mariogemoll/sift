@@ -1,14 +1,18 @@
 """The FastAPI application factory."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from sift.api.routes import health, papers
+from sift.api import gate
+from sift.api.routes import auth, health, papers
 from sift.settings import Settings, get_settings
 from sift.storage.engine import create_engine, create_session_factory
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -35,14 +39,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         summary="Rank documents against weighted criteria",
         lifespan=lifespan,
     )
+    app.state.gate = gate.build(resolved)
+    if not gate.configured(app.state.gate):
+        logger.warning(
+            "No usable SIFT_PASSPHRASE_HASH: the interface is closed to everyone. "
+            "Mint one with `sift passphrase`."
+        )
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(resolved.cors_origins),
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # /health is open because the load balancer polls it and it reveals nothing.
+    # Everything that reads data names the guard, so a new router has to decide.
     app.include_router(health.router)
-    app.include_router(papers.router)
+    app.include_router(auth.router)
+    app.include_router(papers.router, dependencies=[Depends(gate.guard)])
     return app
 
 

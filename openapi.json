@@ -121,6 +121,40 @@
         "title": "PaperPage",
         "type": "object"
       },
+      "SessionStatus": {
+        "description": "Whether the caller is signed in, and whether signing in is even possible.\n\n`configured` is false when the deployment has no passphrase hash, so the\nlogin page can say that rather than blame the phrase you typed.",
+        "properties": {
+          "authenticated": {
+            "title": "Authenticated",
+            "type": "boolean"
+          },
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "authenticated",
+          "configured"
+        ],
+        "title": "SessionStatus",
+        "type": "object"
+      },
+      "SignIn": {
+        "description": "The one credential there is.",
+        "properties": {
+          "passphrase": {
+            "minLength": 1,
+            "title": "Passphrase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "passphrase"
+        ],
+        "title": "SignIn",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -170,6 +204,79 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/auth/session": {
+      "delete": {
+        "operationId": "delete_session_auth_session_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Delete Session",
+        "tags": [
+          "auth"
+        ]
+      },
+      "get": {
+        "description": "Whether the cookie in hand is good. The login page asks this on load.",
+        "operationId": "read_session_auth_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read Session",
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "operationId": "create_session_auth_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health_health_get",

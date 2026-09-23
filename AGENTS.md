@@ -81,6 +81,31 @@ Two rules the scoring deliberately keeps:
 - A dealbreaker is a gate, not a low weight — no amount of strength elsewhere
   should be able to average it away.
 
+## Getting in
+
+One shared passphrase guards the interface; there are no accounts. The server
+holds an scrypt hash of it (`SIFT_PASSPHRASE_HASH`, from `sift passphrase`) and
+signs a session cookie whose key is derived from that hash:
+
+```
+signing key = HMAC(scrypt hash, "sift session v1")
+```
+
+That is one secret rather than two, and rotating the passphrase invalidates every
+session already issued, because the key moves with the hash.
+
+- `POST /auth/session` verifies the phrase and sets an HttpOnly, SameSite=Strict
+  cookie; `DELETE` clears it; `GET` reports whether the caller holds one.
+- The cookie carries its own signed expiry, so there is no session table.
+- Routers that read data name `gate.guard`; `/health` stays open because the load
+  balancer polls it and it reveals nothing.
+- No hash configured means nobody gets in, not everybody. A deploy that loses the
+  secret locks you out rather than opening the doors.
+
+The cost of guessing is scrypt's cost, deliberately. There is no lockout: a
+per-IP one behind CloudFront would mean trusting `X-Forwarded-For`, and a global
+one would let a stranger lock the owner out.
+
 ## Rate limits
 
 arXiv asks for [one request every three seconds on a single
@@ -101,6 +126,7 @@ explicitly rather than left to discover it.
 docker compose up -d db          # Postgres on localhost:5433
 
 cd backend
+cp .env.example .env             # the dev passphrase is "sift"
 uv pip install --python "$(pyenv which python)" -e '.[service]' --group dev
 python -m alembic upgrade head
 python -m uvicorn sift.api.app:app --reload

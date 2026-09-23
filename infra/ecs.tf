@@ -35,15 +35,18 @@ resource "aws_iam_role_policy_attachment" "execution" {
 }
 
 resource "aws_iam_role_policy" "execution_secrets" {
-  name = "read-database-url"
+  name = "read-secrets"
   role = aws_iam_role.execution.id
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
-      Resource = [aws_secretsmanager_secret.database_url.arn]
+      Effect = "Allow"
+      Action = ["secretsmanager:GetSecretValue"]
+      Resource = [
+        aws_secretsmanager_secret.database_url.arn,
+        aws_secretsmanager_secret.passphrase_hash.arn,
+      ]
     }]
   })
 }
@@ -85,10 +88,24 @@ resource "aws_ecs_task_definition" "api" {
       protocol      = "tcp"
     }]
 
-    secrets = [{
-      name      = "SIFT_DATABASE_URL"
-      valueFrom = aws_secretsmanager_secret.database_url.arn
+    # The browser reaches the edge over HTTPS, so the session cookie is
+    # marked Secure even though CloudFront talks to the load balancer in plain
+    # HTTP inside the VPC.
+    environment = [{
+      name  = "SIFT_COOKIE_SECURE"
+      value = "true"
     }]
+
+    secrets = [
+      {
+        name      = "SIFT_DATABASE_URL"
+        valueFrom = aws_secretsmanager_secret.database_url.arn
+      },
+      {
+        name      = "SIFT_PASSPHRASE_HASH"
+        valueFrom = aws_secretsmanager_secret.passphrase_hash.arn
+      },
+    ]
 
     logConfiguration = {
       logDriver = "awslogs"
@@ -179,6 +196,7 @@ resource "aws_ecs_service" "api" {
   depends_on = [
     aws_lb_listener.http,
     aws_secretsmanager_secret_version.database_url,
+    aws_secretsmanager_secret_version.passphrase_hash,
   ]
 
   lifecycle {

@@ -38,3 +38,18 @@ variable "github_repo" {
   type        = string
   default     = "mariogemoll/sift"
 }
+
+variable "passphrase_hash" {
+  description = <<-DESC
+    scrypt hash of the passphrase that opens the web interface, as printed by
+    `sift passphrase` — not the passphrase itself. Required: with no hash the
+    service admits nobody, so this is the one variable without a default.
+  DESC
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = startswith(var.passphrase_hash, "scrypt$")
+    error_message = "Expected the output of `sift passphrase`, which starts with scrypt$."
+  }
+}

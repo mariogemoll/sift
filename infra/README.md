@@ -27,6 +27,40 @@ Three decisions worth knowing:
 - **No AWS keys in GitHub.** Actions assumes a role through OIDC, restricted to
   this repository's default branch.
 
+## The passphrase
+
+The web interface is guarded by one shared passphrase. Secrets Manager holds an
+scrypt hash of it, never the phrase, and the application derives the key that
+signs session cookies from that hash — so this is the only auth secret in the
+stack, and changing it invalidates every session already handed out.
+
+Mint a hash from the backend and put it in `terraform.tfvars`, which is
+gitignored:
+
+```sh
+cd ../backend && sift passphrase     # prints SIFT_PASSPHRASE_HASH=scrypt$...
+```
+
+```hcl
+# infra/terraform.tfvars
+passphrase_hash = "scrypt$16384$8$1$...$..."
+```
+
+There is no default: a service with no hash admits nobody, so Terraform asks
+for it rather than quietly deploying a stack that either locks you out or, worse,
+lets everyone in.
+
+To rotate, replace the value and apply, then force a new deployment — ECS reads
+secrets when a task starts, so the running task keeps the old hash until it is
+replaced:
+
+```sh
+terraform apply
+aws ecs update-service --cluster sift --service sift --force-new-deployment
+```
+
+Everyone signed in with the old passphrase is signed out by that, including you.
+
 ## First deployment
 
 ```sh
@@ -95,6 +129,22 @@ sift  CNAME  <terraform output -raw cloudfront_domain>
 Grey cloud matters. Proxying puts Cloudflare in front of CloudFront: TLS
 terminates twice, two CDNs cache the same objects, and origin errors arrive
 dressed as Cloudflare error pages.
+
+## Changing the container definition
+
+The task definition carries `ignore_changes = [container_definitions]` so that
+Terraform does not fight CI over the image tag. The cost is that editing the
+environment or the secrets of a container — adding one, renaming one — produces
+no plan. Force a fresh revision from the configuration, then deploy so the
+service picks it up:
+
+```sh
+terraform apply -replace=aws_ecs_task_definition.api
+gh workflow run Deploy
+```
+
+The workflow reads the family's latest revision, so it builds on the one
+Terraform just registered.
 
 ## Tearing it down
 

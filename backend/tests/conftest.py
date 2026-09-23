@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import asyncpg
@@ -20,10 +21,16 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from sift.api.app import create_app
+from sift.core.auth import hash_passphrase
 from sift.settings import Settings
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_URL = "postgresql+asyncpg://sift:sift@localhost:5433/sift_test"
+
+PASSPHRASE = "the test passphrase"
+# Hashed once for the whole session, with a fixed salt: scrypt is deliberately
+# slow, and paying for it per test would be paying for nothing.
+PASSPHRASE_HASH = hash_passphrase(PASSPHRASE, b"a fixed 16 bytes")
 
 
 def _admin_dsn(url: str) -> tuple[str, str]:
@@ -64,8 +71,19 @@ def database_url() -> Iterator[str]:
 
 
 @pytest.fixture
+def passphrase() -> str:
+    return PASSPHRASE
+
+
+@pytest.fixture
+def passphrase_hash() -> str:
+    """What the app holds, for tests that need to forge or age a cookie."""
+    return PASSPHRASE_HASH
+
+
+@pytest.fixture
 def settings(database_url: str) -> Settings:
-    return Settings(database_url=database_url)
+    return Settings(database_url=database_url, passphrase_hash=PASSPHRASE_HASH)
 
 
 @pytest.fixture
@@ -73,9 +91,9 @@ def app(settings: Settings) -> FastAPI:
     return create_app(settings)
 
 
-@pytest.fixture
-async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
-    """An HTTP client over the app, with lifespan run so the engine exists."""
+@asynccontextmanager
+async def _serving(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    """An HTTP client over `app`, with lifespan run so the engine exists."""
     async with LifespanManager(app):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as http:
@@ -83,7 +101,34 @@ async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-async def session(app: FastAPI, client: AsyncClient) -> AsyncIterator[AsyncSession]:
+async def anonymous(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    """A client carrying no session cookie."""
+    async with _serving(app) as http:
+        yield http
+
+
+@pytest.fixture
+async def client(anonymous: AsyncClient, passphrase: str) -> AsyncClient:
+    """The same client, signed in — what a browser holds after the login page."""
+    response = await anonymous.post("/auth/session", json={"passphrase": passphrase})
+    assert response.status_code == 200
+    return anonymous
+
+
+@pytest.fixture
+async def closed(database_url: str) -> AsyncIterator[AsyncClient]:
+    """A client for a deployment with no passphrase configured.
+
+    The hash is blanked explicitly, so a developer's own .env cannot turn the
+    fail-closed case into the configured one.
+    """
+    settings = Settings(database_url=database_url, passphrase_hash="")
+    async with _serving(create_app(settings)) as http:
+        yield http
+
+
+@pytest.fixture
+async def session(app: FastAPI, anonymous: AsyncClient) -> AsyncIterator[AsyncSession]:
     """A session on the same database the app is using, for arranging rows."""
     factory: async_sessionmaker[AsyncSession] = app.state.session_factory
     async with factory() as opened:
