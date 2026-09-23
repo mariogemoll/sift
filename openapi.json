@@ -1,6 +1,70 @@
 {
   "components": {
     "schemas": {
+      "BatchRequest": {
+        "description": "Which papers to pull in: one arXiv category, new or revised on or after a date.",
+        "properties": {
+          "category": {
+            "examples": [
+              "cs.IR"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "since": {
+            "format": "date",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "since"
+        ],
+        "title": "BatchRequest",
+        "type": "object"
+      },
+      "BatchResult": {
+        "description": "What a batch did. `matched` exceeds `fetched` when the window spans more than one page.",
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "fetched": {
+            "title": "Fetched",
+            "type": "integer"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "integer"
+          },
+          "since": {
+            "format": "date",
+            "title": "Since",
+            "type": "string"
+          },
+          "until": {
+            "format": "date",
+            "title": "Until",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "since",
+          "until",
+          "matched",
+          "fetched",
+          "added"
+        ],
+        "title": "BatchResult",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -274,6 +338,48 @@
         "summary": "Create Session",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/batches": {
+      "post": {
+        "description": "Fetch the listing and store what is new, before answering.",
+        "operationId": "create_batch_batches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Batch",
+        "tags": [
+          "batches"
         ]
       }
     },

@@ -1,10 +1,11 @@
 """Wire types. Separate from the domain so the contract can be versioned alone."""
 
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from sift.core.types import Page, Paper
+from sift.ingest.listing import valid_category
 
 
 class HealthResponse(BaseModel):
@@ -68,3 +69,28 @@ class PaperPage(BaseModel):
             limit=page.limit,
             offset=page.offset,
         )
+
+
+class BatchRequest(BaseModel):
+    """Which papers to pull in: one arXiv category, new or revised on or after a date."""
+
+    category: str = Field(examples=["cs.IR"])
+    since: date
+
+    @field_validator("category")
+    @classmethod
+    def _known_shape(cls, category: str) -> str:
+        if not valid_category(category):
+            raise ValueError("not an arXiv category, e.g. cs.IR or hep-th")
+        return category
+
+
+class BatchResult(BaseModel):
+    """What a batch did. `matched` exceeds `fetched` when the window spans more than one page."""
+
+    category: str
+    since: date
+    until: date
+    matched: int
+    fetched: int
+    added: int

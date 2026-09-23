@@ -26,6 +26,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Batch
+         * @description Fetch the listing and store what is new, before answering.
+         */
+        post: operations["create_batch_batches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -64,6 +84,46 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * BatchRequest
+         * @description Which papers to pull in: one arXiv category, new or revised on or after a date.
+         */
+        BatchRequest: {
+            /**
+             * Category
+             * @example cs.IR
+             */
+            category: string;
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
+        };
+        /**
+         * BatchResult
+         * @description What a batch did. `matched` exceeds `fetched` when the window spans more than one page.
+         */
+        BatchResult: {
+            /** Added */
+            added: number;
+            /** Category */
+            category: string;
+            /** Fetched */
+            fetched: number;
+            /** Matched */
+            matched: number;
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
+            /**
+             * Until
+             * Format: date
+             */
+            until: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -224,6 +284,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    create_batch_batches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

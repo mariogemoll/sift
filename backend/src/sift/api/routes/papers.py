@@ -1,4 +1,4 @@
-"""Listing papers. Empty until ingestion lands."""
+"""Listing papers."""
 
 from typing import Annotated
 

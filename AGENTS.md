@@ -115,6 +115,20 @@ parallel under its own budget — the pipeline has per-stage limiters, not one
 global semaphore — and object storage holds extracted text, never the source
 PDF.
 
+## Listing papers
+
+Metadata comes from arXiv's OAI-PMH interface (`oaipmh.arxiv.org/oai`), not the
+search API at `export.arxiv.org/api/query`. The search API answers 406 to Python
+HTTP clients — any TLS handshake from Python's OpenSSL that offers ALPN, which
+httpx always does, HTTP/2 included — while curl and `urllib` get through. That
+is arXiv's filtering, not a bug to work around by disguising the client, and
+OAI-PMH is arXiv's recommended channel for bulk metadata anyway.
+
+Two consequences. A window selects records by datestamp, the day a record last
+changed, so it catches revised papers as well as new ones. And a response is one
+page with a resumption token when more match; `BatchResult.matched` reports the
+whole count.
+
 ## Running it
 
 `.python-version` at the repo root selects the pyenv virtualenv for the whole

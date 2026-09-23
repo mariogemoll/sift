@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DependencyList } from "react";
 
 import { messageOf } from "./client";
 
@@ -8,13 +8,19 @@ export type Async<T> =
   | { status: "failed"; message: string; error: unknown };
 
 /**
- * Run `load` once on mount and report which of the three states we are in.
+ * Run `load` on mount, and again whenever `deps` change, and report which of the
+ * three states we are in.
  *
- * `load` is read on the first render only; a result arriving after unmount is
- * dropped rather than written to a gone component. The failure keeps the thrown
- * value as well as its message, so a caller can tell one kind apart from another.
+ * A rerun keeps showing the previous value until the new one arrives, so a
+ * reload does not flash the loading state. `load` is read when `deps` change,
+ * not on every render; a result arriving after unmount or after a newer run
+ * started is dropped. The failure keeps the thrown value as well as its message,
+ * so a caller can tell one kind apart from another.
  */
-export function useAsync<T>(load: () => Promise<T>): Async<T> {
+export function useAsync<T>(
+  load: () => Promise<T>,
+  deps: DependencyList = [],
+): Async<T> {
   const [state, setState] = useState<Async<T>>({ status: "loading" });
 
   useEffect(() => {
@@ -30,7 +36,7 @@ export function useAsync<T>(load: () => Promise<T>): Async<T> {
     return () => {
       live = false;
     };
-  }, []);
+  }, deps);
 
   return state;
 }

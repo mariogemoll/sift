@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Unauthorized, fetchHealth, fetchPapers } from "./api/client";
 import { useAsync } from "./api/useAsync";
 import { useSession } from "./api/useSession";
+import { BatchForm } from "./components/BatchForm";
 import { HealthBadge } from "./components/HealthBadge";
 import { PapersTable } from "./components/PapersTable";
 import { SignIn } from "./components/SignIn";
@@ -38,7 +39,10 @@ function Workspace({
   onEnded: () => void;
 }) {
   const health = useAsync(fetchHealth);
-  const papers = useAsync(() => fetchPapers());
+  // Bumped after a batch lands, so the table reloads with the new rows.
+  const [generation, setGeneration] = useState(0);
+  const papers = useAsync(() => fetchPapers(), [generation]);
+  const reload = useCallback(() => setGeneration((value) => value + 1), []);
 
   // A cookie can expire between loading the page and asking for data. That is
   // not an error to show, it is the login page again.
@@ -66,6 +70,8 @@ function Workspace({
         <p>Rank a pile of documents against weighted criteria.</p>
         <HealthBadge health={health} />
       </header>
+
+      <BatchForm onDone={reload} onEnded={onEnded} />
 
       {papers.status === "loading" && <p className="note">Loading papers…</p>}
       {papers.status === "failed" && (

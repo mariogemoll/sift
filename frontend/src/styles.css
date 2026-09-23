@@ -83,6 +83,50 @@ header p {
   color: var(--bad);
 }
 
+/* The batch form: one row of labelled fields, wrapping on a narrow screen. */
+form.batch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+form.batch label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+form.batch label span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+form.batch input {
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  width: 9rem;
+}
+
+form.batch input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 1px;
+}
+
+form.batch .note {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 table.papers {
   width: 100%;
   border-collapse: collapse;

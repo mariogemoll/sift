@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import asyncpg
+import httpx
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
@@ -21,6 +22,7 @@ from httpx import ASGITransport, AsyncClient
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from arxiv_fake import FakeArxiv
 from sift.api.app import create_app
 from sift.core.auth import hash_passphrase
 from sift.settings import Settings
@@ -104,8 +106,13 @@ def settings(database_url: str) -> Settings:
 
 
 @pytest.fixture
-def app(settings: Settings) -> FastAPI:
-    return create_app(settings)
+def arxiv() -> FakeArxiv:
+    return FakeArxiv()
+
+
+@pytest.fixture
+def app(settings: Settings, arxiv: FakeArxiv) -> FastAPI:
+    return create_app(settings, transport=httpx.MockTransport(arxiv.handle))
 
 
 @asynccontextmanager

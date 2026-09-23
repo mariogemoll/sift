@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2026-09-23T15:45:25Z</responseDate>
+                <request verb="ListRecords" metadataPrefix="arXiv" from="2026-09-20" set="cs:cs:IR">http://oaipmh.arxiv.org/oai</request>
+
+
+    <ListRecords>
+<record>
+                <header>
+        <identifier>oai:arXiv.org:2510.27141</identifier>
+        <datestamp>2026-09-21</datestamp>
+            <setSpec>cs:cs:DB</setSpec>
+            <setSpec>cs:cs:IR</setSpec>
+    </header>
+
+            <metadata>
+                        <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ https://oaipmh.arxiv.org/OAI/arXiv.xsd">
+        <id>2510.27141</id>
+        <created>2026-09-18</created>
+            <updated>2026-09-21</updated>
+        <authors>
+                <author>
+                    <keyname>Ye</keyname>
+                        <forenames>Chunxiao</forenames>
+                </author>
+                <author>
+                    <keyname>Yan</keyname>
+                        <forenames>Xiao</forenames>
+                </author>
+                <author>
+                    <keyname>Lo</keyname>
+                        <forenames>Eric</forenames>
+                </author>
+        </authors>
+        <title>Compass: General Filtered Search across Vector and Structured Data</title>
+            <categories>cs.DB cs.IR</categories>
+            <license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license>
+            <abstract>The increasing prevalence of hybrid vector and relational data necessitates efficient, general support for queries that combine high-dimensional vector search with complex relational filtering. However, existing filtered search solutions are fundamentally limited by specialized indices, which restrict arbitrary filtering and hinder integration with general-purpose DBMSs. This work introduces \textsc{Compass}, a unified framework that enables general filtered search across vector and structured data without relying on new index designs. Compass leverages established index structures -- such as HNSW and IVF for vector attributes, and B+-trees for relational attributes -- implementing a principled cooperative query execution strategy that coordinates candidate generation and predicate evaluation across modalities. Uniquely, Compass maintains generality by allowing arbitrary conjunctions, disjunctions, and range predicates, while ensuring robustness even with highly-selective or multi-attribute filters. Comprehensive empirical evaluations demonstrate that Compass consistently outperforms NaviX, the only existing performant general framework, across diverse hybrid query workloads. It also matches the query throughput of specialized single-attribute indices in their favorite settings with only a single attribute involved, all while maintaining full generality and DBMS compatibility. Overall, Compass offers a practical and robust solution for achieving truly general filtered search in vector database systems.</abstract>
+    </arXiv>
+
+            </metadata>
+        </record>
+<record>
+                <header>
+        <identifier>oai:arXiv.org:2602.03422</identifier>
+        <datestamp>2026-09-21</datestamp>
+            <setSpec>cs:cs:IR</setSpec>
+    </header>
+
+            <metadata>
+                        <arXiv xmlns="http://arxiv.org/OAI/arXiv/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXiv/ https://oaipmh.arxiv.org/OAI/arXiv.xsd">
+        <id>2602.03422</id>
+        <created>2026-09-18</created>
+            <updated>2026-09-21</updated>
+        <authors>
+                <author>
+                    <keyname>Wang</keyname>
+                        <forenames>Yumeng</forenames>
+                </author>
+                <author>
+                    <keyname>Chen</keyname>
+                        <forenames>Catherine</forenames>
+                </author>
+                <author>
+                    <keyname>Verberne</keyname>
+                        <forenames>Suzan</forenames>
+                </author>
+        </authors>
+        <title>RankSteer: Can Pointwise LLM Rankers Be Calibrated at the Representation Level?</title>
+            <categories>cs.IR</categories>
+            <license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license>
+            <abstract>Large language models (LLMs) are strong zero-shot pointwise rankers, but lag behind pairwise and listwise methods. Beyond missing comparative signals, we identify a \textit{calibration gap}: ranking-relevant information encoded in hidden states is not fully captured by the scalar output head. We propose RankSteer, a post-hoc activation-steering framework that calibrates ranking via projection-based interventions along multiple directions at inference time: decision, evidence, and, optionally, role. This is achieved without updating model weights or introducing cross-document comparisons. We instantiate RankSteer on two structurally distinct pointwise variants and observe improvements over their respective baselines on most TREC DL and BEIR datasets across three backbones. This suggests that the calibration gap is a general property of pointwise rankers. Our additional geometric analysis shows that steering improves ranking by concentrating each query&#39;s document representations along an existing ranking geometry, offering new insight into how LLMs internally represent and calibrate relevance judgments.</abstract>
+    </arXiv>
+
+            </metadata>
+        </record>
+    </ListRecords>
+</OAI-PMH>

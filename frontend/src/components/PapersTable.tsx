@@ -23,7 +23,7 @@ export function PapersTable({ papers }: { papers: readonly Paper[] }) {
           <tr className="empty">
             <td colSpan={4}>
               <strong>No papers yet.</strong>
-              <span>Ingestion lands in the next slice.</span>
+              <span>Fetch a category from arXiv above.</span>
             </td>
           </tr>
         ) : (
