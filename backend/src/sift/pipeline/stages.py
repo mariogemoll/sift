@@ -33,22 +33,21 @@ from datetime import timedelta
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from sift.core import scoring
-from sift.core.cache import key_for
-from sift.core.judgments import Document, Judgments, Profile, Verdict
-from sift.core.retry import Failure, Retryable, RetryPolicy, after_failure
-from sift.core.text import for_judging
-from sift.core.types import ItemState, Stage
-from sift.ingest.failures import FetchFailed
-from sift.ingest.fetch import fetch_document
-from sift.ingest.pacing import Pacer
-from sift.ingest.pdf import Limits
-from sift.judge import Ask, Asker, AskFailed, ask_for, screen_ask_for
+from sift.arxiv.failures import FetchFailed
+from sift.arxiv.fetch import fetch_document
+from sift.arxiv.pacing import Pacer
+from sift.arxiv.pdf import Limits
+from sift.judging import Ask, Asker, AskFailed, ask_for, scoring, screen_ask_for
+from sift.judging.cache import key_for
+from sift.judging.judgments import Document, Judgments, Profile, Verdict
+from sift.judging.text import for_judging
+from sift.retry import Failure, Retryable, RetryPolicy, after_failure
 from sift.storage.engine import session_scope
 from sift.storage.items import ItemClaim, advance_item, claim_item, record_item_failure
 from sift.storage.judgments import cached_judgments, store_judgments
 from sift.storage.texts import get_text, has_text, put_text
 from sift.storage.verdicts import put_verdict
+from sift.types import ItemState, Stage
 
 logger = logging.getLogger(__name__)
 

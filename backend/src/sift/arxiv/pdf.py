@@ -16,8 +16,8 @@ from datetime import UTC, datetime
 
 import httpx
 
-from sift.core.retry import Retryable, Terminal
-from sift.ingest.failures import FetchFailed, from_error, from_status
+from sift.arxiv.failures import FetchFailed, from_error, from_status
+from sift.retry import Retryable, Terminal
 
 PDF_URL = "https://arxiv.org/pdf/{}"
 _PDF_MAGIC = b"%PDF-"

@@ -1,6 +1,7 @@
 """Reads and writes over the papers table. Functions, not a repository class."""
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import cast
 
@@ -8,10 +9,18 @@ from sqlalchemy import Select, and_, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.judgments import Verdict, VerdictStage
-from sift.core.types import Assessed, Order, Page, Paper
+from sift.judging.judgments import Verdict, VerdictStage
 from sift.storage.models import Paper as PaperRow
 from sift.storage.models import Verdict as VerdictRow
+from sift.types import Order, Page, Paper
+
+
+@dataclass(frozen=True, slots=True)
+class Assessed:
+    """A paper and where it stands against a wishlist; None until it is screened."""
+
+    paper: Paper
+    verdict: Verdict | None
 
 
 def _to_domain(row: PaperRow) -> Paper:

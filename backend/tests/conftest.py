@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from arxiv_fake import FakeArxiv
 from sift.api.app import create_app
-from sift.core.auth import hash_passphrase
+from sift.auth.passphrase import hash_passphrase
 from sift.settings import Settings
 
 ROOT = Path(__file__).resolve().parent.parent

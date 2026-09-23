@@ -4,7 +4,7 @@ from sqlalchemy import or_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.judgments import Verdict
+from sift.judging.judgments import Verdict
 from sift.storage.models import Verdict as VerdictRow
 
 

@@ -16,10 +16,10 @@ from uuid import UUID, uuid4
 from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.retry import GiveUp, NextStep, RetryIn
-from sift.core.types import ItemState, Stage
+from sift.retry import GiveUp, NextStep, RetryIn
 from sift.storage.models import BatchItem as ItemRow
 from sift.storage.models import Paper as PaperRow
+from sift.types import ItemState, Stage
 
 
 @dataclass(frozen=True, slots=True)

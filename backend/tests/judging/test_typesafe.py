@@ -7,10 +7,10 @@ import httpx2
 import pytest
 from typesafe_sdk import AsyncTypeSafeClient, RetryPolicy
 
-from sift.core.question_types import Choice, Noul, Score
-from sift.core.retry import Retryable, Terminal
-from sift.judge import Ask, AskFailed
-from sift.judge.typesafe import TypeSafeAsker
+from sift.judging import Ask, AskFailed
+from sift.judging.question_types import Choice, Noul, Score
+from sift.judging.typesafe import TypeSafeAsker
+from sift.retry import Retryable, Terminal
 
 ASK = Ask(
     {"document": "A paper about retrieval.", "background": "IR research"},

@@ -4,8 +4,9 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from sift.core.judgments import Kind, Profile, Verdict, VerdictStage
-from sift.core.types import Assessed, Batch, BatchState, BatchStatus, ItemState, Page, Paper
+from sift.judging.judgments import Kind, Profile, Verdict, VerdictStage
+from sift.storage.papers import Assessed
+from sift.types import Batch, BatchState, BatchStatus, ItemState, Page, Paper
 
 
 class HealthResponse(BaseModel):

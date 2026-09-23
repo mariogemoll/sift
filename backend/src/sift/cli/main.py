@@ -7,7 +7,7 @@ from getpass import getpass
 
 import uvicorn
 
-from sift.core.auth import SALT_BYTES, hash_passphrase
+from sift.auth.passphrase import SALT_BYTES, hash_passphrase
 from sift.settings import get_settings
 
 

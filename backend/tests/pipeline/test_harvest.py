@@ -12,12 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from arxiv_fake import Entry, FakeArxiv, feed
 from clock_fake import FakeClock
-from sift.core.retry import RetryPolicy
-from sift.core.types import Paper
-from sift.ingest.pacing import Pacer
+from sift.arxiv.pacing import Pacer
 from sift.pipeline.harvest import Harvest, harvest_step, run_harvester
+from sift.retry import RetryPolicy
 from sift.storage.batches import claim_batch, record_announcement
 from sift.storage.engine import session_scope
+from sift.types import Paper
 
 # What a worker that lost its lease would still try to write.
 STALE_PAPER = Paper(

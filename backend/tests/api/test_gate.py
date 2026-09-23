@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 
-from sift.api.gate import COOKIE
-from sift.core.auth import hash_passphrase, mint_session, session_key
+from sift.auth.gate import COOKIE
+from sift.auth.passphrase import hash_passphrase, mint_session, session_key
 
 
 async def test_a_visitor_is_not_signed_in_but_could_be(anonymous: AsyncClient) -> None:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from sift.core import questions, scoring
-from sift.core.judgments import Judgments, Profile, ScoreValue
+from sift.judging import questions, scoring
+from sift.judging.judgments import Judgments, Profile, ScoreValue
 
 
 def _judgments(

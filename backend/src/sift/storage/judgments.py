@@ -4,8 +4,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.cache import from_json, to_json
-from sift.core.judgments import Judgments
+from sift.judging.cache import from_json, to_json
+from sift.judging.judgments import Judgments
 from sift.storage.models import Judgment
 
 

@@ -20,12 +20,12 @@ from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.retry import GiveUp, NextStep, RetryIn
-from sift.core.types import Batch, BatchState, ItemState, Paper, batch_status
+from sift.retry import GiveUp, NextStep, RetryIn
 from sift.storage.models import Batch as BatchRow
 from sift.storage.models import BatchItem as BatchItemRow
 from sift.storage.models import Paper as PaperRow
 from sift.storage.papers import add_papers
+from sift.types import Batch, BatchState, ItemState, Paper, batch_status
 
 UNFINISHED: tuple[BatchState, ...] = ("queued", "harvesting")
 

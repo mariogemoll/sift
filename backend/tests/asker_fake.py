@@ -3,11 +3,11 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
-from sift.core.judgments import Judgments, ScoreValue
-from sift.core.question_types import Noul, Score
-from sift.core.questions import INJECTED_INSTRUCTIONS, IS_DOCUMENT
-from sift.core.retry import Failure
-from sift.judge import Ask, AskFailed
+from sift.judging import Ask, AskFailed
+from sift.judging.judgments import Judgments, ScoreValue
+from sift.judging.question_types import Noul, Score
+from sift.judging.questions import INJECTED_INSTRUCTIONS, IS_DOCUMENT
+from sift.retry import Failure
 
 
 @dataclass

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from sift.core import questions
-from sift.core.judgments import Criterion, Document, Profile
-from sift.core.question_types import Noul, Score
+from sift.judging import questions
+from sift.judging.judgments import Criterion, Document, Profile
+from sift.judging.question_types import Noul, Score
 
 
 def test_builds_one_question_per_criterion_plus_the_fixed_set(profile: Profile) -> None:

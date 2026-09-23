@@ -8,9 +8,9 @@ import httpx
 import pytest
 
 from pdf_fake import pdf
-from sift.core.retry import Retryable, Terminal
-from sift.ingest.failures import FetchFailed
-from sift.ingest.pdf import Limits, download_pdf, pdf_url
+from sift.arxiv.failures import FetchFailed
+from sift.arxiv.pdf import Limits, download_pdf, pdf_url
+from sift.retry import Retryable, Terminal
 
 NOW = datetime(2026, 9, 23, 12, 0, 0, tzinfo=UTC)
 PAPER = pdf("On Sifting")

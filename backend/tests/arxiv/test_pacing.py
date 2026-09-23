@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from clock_fake import FakeClock
-from sift.ingest.pacing import Pacer
+from sift.arxiv.pacing import Pacer
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 
 from arxiv_fake import FakeArxiv
-from sift.core.profile import ProfileError
+from sift.judging.profile import ProfileError
 from sift.pipeline import wishlist
 
 

@@ -1,6 +1,6 @@
 import pytest
 
-from sift.core.text import capped, for_judging, without_references
+from sift.judging.text import capped, for_judging, without_references
 
 BODY = "Introduction\n" + "We study things. " * 50 + "\nConclusion\nIt works.\n"
 

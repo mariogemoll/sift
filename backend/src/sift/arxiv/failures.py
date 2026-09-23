@@ -11,7 +11,7 @@ from http import HTTPStatus
 
 import httpx
 
-from sift.core.retry import Failure, Retryable, Terminal
+from sift.retry import Failure, Retryable, Terminal
 
 _RETRYABLE_CLIENT_ERRORS = frozenset({408, 425, 429})
 # Transport errors caused by the network or the far end. The rest of httpx's

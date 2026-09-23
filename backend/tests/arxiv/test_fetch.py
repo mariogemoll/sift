@@ -9,12 +9,12 @@ import pytest
 
 from clock_fake import FakeClock
 from pdf_fake import pdf
-from sift.core.retry import Retryable, Terminal
-from sift.ingest.extract import content_hash
-from sift.ingest.failures import FetchFailed
-from sift.ingest.fetch import Document, fetch_document
-from sift.ingest.pacing import Pacer
-from sift.ingest.pdf import Limits
+from sift.arxiv.extract import content_hash
+from sift.arxiv.failures import FetchFailed
+from sift.arxiv.fetch import Document, fetch_document
+from sift.arxiv.pacing import Pacer
+from sift.arxiv.pdf import Limits
+from sift.retry import Retryable, Terminal
 
 NOW = datetime(2026, 9, 23, 12, 0, 0, tzinfo=UTC)
 LIMITS = Limits(max_bytes=64 * 1024, deadline=1.0)

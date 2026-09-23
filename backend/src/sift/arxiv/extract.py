@@ -12,8 +12,8 @@ import io
 
 from pypdf import PdfReader
 
-from sift.core.retry import Terminal
-from sift.ingest.failures import FetchFailed
+from sift.arxiv.failures import FetchFailed
+from sift.retry import Terminal
 
 
 def clean(text: str) -> str:

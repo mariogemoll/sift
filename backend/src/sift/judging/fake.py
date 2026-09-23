@@ -2,10 +2,10 @@
 
 from collections.abc import Sequence
 
-from sift.core.cache import key_for
-from sift.core.judgments import ChoiceValue, Judgments, ScoreValue
-from sift.core.question_types import Choice, Noul, Score
-from sift.core.questions import INJECTED_INSTRUCTIONS, IS_DOCUMENT
+from sift.judging.cache import key_for
+from sift.judging.judgments import ChoiceValue, Judgments, ScoreValue
+from sift.judging.question_types import Choice, Noul, Score
+from sift.judging.questions import INJECTED_INSTRUCTIONS, IS_DOCUMENT
 
 from .asker import Ask
 

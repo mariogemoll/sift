@@ -9,9 +9,9 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from sift.api import gate
 from sift.api.schemas import SessionStatus, SignIn
-from sift.core.auth import verify_passphrase
+from sift.auth import gate
+from sift.auth.passphrase import verify_passphrase
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

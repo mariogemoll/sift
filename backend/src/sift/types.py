@@ -1,11 +1,9 @@
-"""The domain vocabulary. Stdlib only, so importing it costs nothing."""
+"""The vocabulary the packages share: papers, batches, stages, pages of results."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal
-
-from .judgments import Verdict
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,14 +16,6 @@ class Paper:
     categories: tuple[str, ...]
     published_at: datetime
     abstract: str
-
-
-@dataclass(frozen=True, slots=True)
-class Assessed:
-    """A paper and where it stands against a wishlist; None until it is screened."""
-
-    paper: Paper
-    verdict: Verdict | None
 
 
 Order = Literal["rank", "newest"]

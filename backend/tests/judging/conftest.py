@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sift.core.judgments import Criterion, Profile
+from sift.judging.judgments import Criterion, Profile
 
 
 @pytest.fixture

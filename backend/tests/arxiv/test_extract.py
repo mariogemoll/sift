@@ -1,9 +1,9 @@
 import pytest
 
 from pdf_fake import pdf
-from sift.core.retry import Terminal
-from sift.ingest.extract import clean, content_hash, extract_text
-from sift.ingest.failures import FetchFailed
+from sift.arxiv.extract import clean, content_hash, extract_text
+from sift.arxiv.failures import FetchFailed
+from sift.retry import Terminal
 
 
 def test_text_comes_out_page_by_page() -> None:

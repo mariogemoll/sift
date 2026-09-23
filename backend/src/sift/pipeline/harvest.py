@@ -23,10 +23,10 @@ from datetime import timedelta
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from sift.core.retry import Retryable, RetryPolicy, after_failure
-from sift.ingest.announcements import fetch_announcement
-from sift.ingest.failures import FetchFailed
-from sift.ingest.pacing import Pacer
+from sift.arxiv.announcements import fetch_announcement
+from sift.arxiv.failures import FetchFailed
+from sift.arxiv.pacing import Pacer
+from sift.retry import Retryable, RetryPolicy, after_failure
 from sift.storage.batches import claim_batch, record_announcement, record_failure
 from sift.storage.engine import session_scope
 

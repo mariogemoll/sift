@@ -10,18 +10,18 @@ import httpx
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from sift.api import gate
 from sift.api.routes import auth, batches, health, papers, profile
-from sift.core.retry import RetryPolicy
-from sift.core.types import Stage
-from sift.ingest.pacing import Pacer
-from sift.ingest.pdf import Limits
-from sift.judge import Asker, FakeAsker
+from sift.arxiv.pacing import Pacer
+from sift.arxiv.pdf import Limits
+from sift.auth import gate
+from sift.judging import Asker, FakeAsker
 from sift.pipeline import wishlist
 from sift.pipeline.harvest import Harvest, run_harvester
 from sift.pipeline.stages import Work, run_stage
+from sift.retry import RetryPolicy
 from sift.settings import Settings, downloads, get_settings
 from sift.storage.engine import create_engine, create_session_factory
+from sift.types import Stage
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ async def _asker(settings: Settings, stack: AsyncExitStack) -> Asker:
     if settings.asker == "fake":
         return FakeAsker()
     # Imported here so the fake needs nothing from the SDK.
-    from sift.judge import typesafe
+    from sift.judging import typesafe
 
     if settings.typesafe_api_key is None:
         raise RuntimeError("SIFT_ASKER=typesafe needs TYPESAFE_API_KEY")

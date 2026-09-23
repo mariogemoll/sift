@@ -17,15 +17,15 @@ from arxiv_fake import Entry, FakeArxiv, feed
 from asker_fake import ScriptedAsker
 from clock_fake import FakeClock
 from pdf_fake import pdf
-from sift.core.retry import Retryable, RetryPolicy, Terminal
-from sift.core.types import Stage
-from sift.ingest.pacing import Pacer
+from sift.arxiv.pacing import Pacer
 from sift.pipeline.harvest import harvest_step
 from sift.pipeline.stages import Work, step
+from sift.retry import Retryable, RetryPolicy, Terminal
 from sift.settings import Settings, downloads
 from sift.storage.engine import session_scope
 from sift.storage.items import advance_item, claim_item
 from sift.storage.models import BatchItem, PaperText, Verdict
+from sift.types import Stage
 
 PROMISING = Entry(id="2609.00001", title="Robot grasping", abstract="We study robotics.")
 DULL = Entry(id="2609.00002", title="Tax law", abstract="A survey of tax codes.")

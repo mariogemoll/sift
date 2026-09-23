@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sift.core.types import Page, Paper, batch_status, empty_page
+from sift.types import Page, Paper, batch_status, empty_page
 
 
 def test_empty_page_reports_the_window_it_was_asked_for() -> None:

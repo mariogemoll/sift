@@ -22,6 +22,7 @@ service = [
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.1",
     "pytest>=8",
     "pytest-asyncio>=0.25",
     "asgi-lifespan>=2.1",
@@ -57,3 +58,89 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.importlinter]
+root_package = "sift"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Entry points sit on the pipeline, and nothing below reaches back up"
+type = "layers"
+layers = [
+    "sift.api | sift.cli",
+    "sift.pipeline",
+    "sift.storage : sift.arxiv : sift.auth : sift.judging",
+    "sift.types",
+    "sift.retry",
+]
+
+[[tool.importlinter.contracts]]
+name = "Pure modules import no third-party library, directly or through another module"
+type = "forbidden"
+source_modules = [
+    "sift.types",
+    "sift.retry",
+    "sift.auth.passphrase",
+    "sift.judging.judgments",
+    "sift.judging.question_types",
+    "sift.judging.questions",
+    "sift.judging.profile",
+    "sift.judging.scoring",
+    "sift.judging.cache",
+    "sift.judging.text",
+    "sift.judging.asker",
+    "sift.judging.fake",
+]
+forbidden_modules = [
+    "alembic",
+    "asyncpg",
+    "fastapi",
+    "httpx",
+    "pydantic",
+    "pydantic_settings",
+    "pypdf",
+    "sqlalchemy",
+    "starlette",
+    "typesafe_sdk",
+    "uvicorn",
+]
+
+[[tool.importlinter.contracts]]
+name = "Judging, arXiv and auth never touch the database"
+type = "forbidden"
+source_modules = ["sift.judging", "sift.arxiv", "sift.auth", "sift.cli", "sift.types", "sift.retry"]
+forbidden_modules = ["sift.storage", "sqlalchemy", "asyncpg"]
+
+[[tool.importlinter.contracts]]
+name = "Only the API and the gate import FastAPI"
+type = "forbidden"
+source_modules = [
+    "sift.pipeline",
+    "sift.storage",
+    "sift.arxiv",
+    "sift.judging",
+    "sift.cli",
+    "sift.types",
+    "sift.retry",
+    "sift.settings",
+    "sift.auth.passphrase",
+]
+forbidden_modules = ["fastapi", "starlette"]
+
+[[tool.importlinter.contracts]]
+name = "Only the TypeSafe adapter imports the TypeSafe SDK"
+type = "forbidden"
+source_modules = [
+    "sift.api",
+    "sift.cli",
+    "sift.pipeline",
+    "sift.storage",
+    "sift.arxiv",
+    "sift.auth",
+    "sift.types",
+    "sift.retry",
+    "sift.settings",
+]
+forbidden_modules = ["typesafe_sdk"]
+# The API constructs the adapter, which is the one import allowed to reach the SDK.
+allow_indirect_imports = true

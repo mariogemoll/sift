@@ -22,9 +22,9 @@ from email.utils import parsedate_to_datetime
 
 import httpx
 
-from sift.core.retry import Retryable
-from sift.core.types import Paper
-from sift.ingest.failures import FetchFailed, from_error, from_status
+from sift.arxiv.failures import FetchFailed, from_error, from_status
+from sift.retry import Retryable
+from sift.types import Paper
 
 FEED_URL = "https://rss.arxiv.org/rss/{}"
 

@@ -24,9 +24,9 @@ from typesafe_sdk import Choice as SdkChoice
 from typesafe_sdk import Noul as SdkNoul
 from typesafe_sdk import Score as SdkScore
 
-from sift.core.judgments import ChoiceValue, Judgments, ScoreValue
-from sift.core.question_types import Choice, Instructions, Noul, Question, Score
-from sift.core.retry import Failure, Retryable, Terminal
+from sift.judging.judgments import ChoiceValue, Judgments, ScoreValue
+from sift.judging.question_types import Choice, Instructions, Noul, Question, Score
+from sift.retry import Failure, Retryable, Terminal
 
 from .asker import Ask, AskFailed
 

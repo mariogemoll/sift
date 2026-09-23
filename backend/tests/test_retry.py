@@ -1,6 +1,6 @@
 import pytest
 
-from sift.core.retry import (
+from sift.retry import (
     GiveUp,
     Retryable,
     RetryIn,

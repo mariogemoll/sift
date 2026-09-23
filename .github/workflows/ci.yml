@@ -45,7 +45,7 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy
-      - run: python scripts/check_layering.py
+      - run: lint-imports
       - run: python scripts/export_openapi.py --check
       - run: alembic upgrade head
       - run: pytest -q

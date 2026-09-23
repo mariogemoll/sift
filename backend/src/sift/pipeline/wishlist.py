@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from sift.core.judgments import Profile
-from sift.core.profile import ProfileError, parse_toml
-from sift.ingest.announcements import valid_category
+from sift.arxiv.announcements import valid_category
+from sift.judging.judgments import Profile
+from sift.judging.profile import ProfileError, parse_toml
 
 
 def load(path: Path) -> Profile:

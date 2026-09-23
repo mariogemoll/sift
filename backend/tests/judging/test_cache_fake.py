@@ -2,10 +2,9 @@ from dataclasses import replace
 
 import pytest
 
-from sift.core import cache, scoring
-from sift.core.judgments import Document, Profile
-from sift.core.question_types import Choice, Noul, Score
-from sift.judge import Ask, Asker, FakeAsker, ask_for
+from sift.judging import Ask, Asker, FakeAsker, ask_for, cache, scoring
+from sift.judging.judgments import Document, Profile
+from sift.judging.question_types import Choice, Noul, Score
 
 
 async def test_batch_contract_and_serialization(profile: Profile) -> None:
@@ -87,7 +86,7 @@ def test_cache_covers_question_details() -> None:
     ) != cache.key_for({}, {"q": Choice("same", {"a": "changed", "b": "B"})}, model="m")
 
 
-def test_core_and_fake_run_without_third_party_packages() -> None:
+def test_pure_judging_runs_without_third_party_packages() -> None:
     import subprocess
     import sys
     from pathlib import Path
@@ -96,9 +95,9 @@ def test_core_and_fake_run_without_third_party_packages() -> None:
     script = f"""
 import sys
 sys.path.insert(0, {str(source)!r})
-from sift.core import cache, profile, scoring
-from sift.core.judgments import Document
-from sift.judge import FakeAsker, ask_for
+from sift.judging import cache, profile, scoring
+from sift.judging.judgments import Document
+from sift.judging import FakeAsker, ask_for
 import asyncio
 p = profile.parse_toml('[[want]]\\nid = "robots"\\nrequirement = "Robotics"')
 ask = ask_for(Document('p', 'A robotics paper'), p)

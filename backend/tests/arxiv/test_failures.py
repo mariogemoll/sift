@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from sift.core.retry import Retryable, Terminal
-from sift.ingest.failures import from_error, from_status, retry_after
+from sift.arxiv.failures import from_error, from_status, retry_after
+from sift.retry import Retryable, Terminal
 
 NOW = datetime(2026, 9, 23, 12, 0, 0, tzinfo=UTC)
 

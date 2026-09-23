@@ -7,8 +7,8 @@ from fastapi import APIRouter, Query
 
 from sift.api.deps import RankedAgainst, Session
 from sift.api.schemas import PaperPage
-from sift.core.types import Order
 from sift.storage.papers import list_papers
+from sift.types import Order
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 

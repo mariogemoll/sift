@@ -4,10 +4,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from sift.core import questions
-from sift.core.judgments import Document, Judgments, Profile
-from sift.core.question_types import Question
-from sift.core.retry import Failure
+from sift.judging import questions
+from sift.judging.judgments import Document, Judgments, Profile
+from sift.judging.question_types import Question
+from sift.retry import Failure
 
 
 @dataclass(frozen=True, slots=True)

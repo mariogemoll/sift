@@ -15,52 +15,50 @@ backend/     the Python service — FastAPI, SQLAlchemy, Alembic, the CLI
 frontend/    the React SPA — Vite, TypeScript
 infra/       the AWS stack — Terraform
 openapi.json the contract between them, generated from the backend
+docs/        diagrams/ — hand-written SVG, embedded in README.md
 docker-compose.yml
 ```
+
+The diagrams are edited as SVG source. Each carries its own `<style>` with a
+light and a `prefers-color-scheme: dark` palette, so it reads on either GitHub
+theme; keep them in step with the code they depict.
 
 They share no code and no build. The only thing crossing the boundary is HTTP,
 described by `openapi.json`.
 
-## Inside the backend — a fan, not a stack
+## Inside the backend — packages by topic
 
-Three tiers under `backend/src/sift/`, enforced by
-`backend/scripts/check_layering.py` over the AST:
+Code lives with its topic under `backend/src/sift/`, whether it is pure or
+talks to the outside world:
 
 ```
-core/        pure domain: types, scoring, questions, profile.
-             stdlib only, imports nothing else in the package
-
-branches — each owns one heavy dependency, NONE may import another:
-  judge/     the Asker protocol and its adapters
-  storage/   SQLAlchemy models and repository functions
-  ingest/    listing, fetching, text extraction
-
-convergence — may import anything below:
-  pipeline/  the batch runner and its state machine
-  api/       the FastAPI application
-  cli/       the command line
-  mcp/       a read-only MCP server
-
-settings.py is a root module anything may import.
+api/  cli/   entry points
+pipeline/    the harvester and the stage workers: the only place topics meet
+storage/     SQLAlchemy models and repository functions
+arxiv/       daily announcements, PDF download and extraction, the pacer
+auth/        the passphrase, the session tokens it signs, the gate that checks them
+judging/     questions, profile, scoring, the answer cache, text preparation,
+             the Asker protocol and its adapters
+types.py     the vocabulary the packages share: papers, batches, stages, pages
+retry.py     what to do after a failure: try again later, or give up
+settings.py  configuration from the environment
 ```
 
-A stack forces an ordering between siblings that have none, and then people
-import sideways and the layering rots. The sibling ban gives the convergence
-tier a definition instead of making it a leftover bucket: a module that needs
-two capabilities belongs there by construction, and a module reaching sideways
-for a fact is telling you that fact belongs in `core`.
+import-linter enforces the boundaries, from contracts in
+`backend/pyproject.toml`:
 
-The practical payoff is that importing `core` pulls in neither SQLAlchemy nor a
-model SDK, so its tests stay fast.
+- Each row imports only rows below it: entry points, then `pipeline`, then the
+  topic packages (which may use one another), then `types`, then `retry`.
+- **Pure modules import no third-party library, directly or through anything
+  they import.** `types`, `retry`, `auth.passphrase` and every module in
+  `judging` except `typesafe.py` are pure, so their tests need no database, no
+  network and no API key.
+- Judging, arXiv and auth never touch the database.
+- Only `api` and `auth.gate` import FastAPI; only `judging.typesafe` imports the
+  TypeSafe SDK.
 
-## Conventions
-
-- Functions over classes. Small, independently testable units.
-- **Repositories are module-level functions taking a session.** SQLAlchemy
-  models are the only classes in `storage/`.
-- `mypy --strict` is green. Keep it that way.
-- `core/` is pure: no network, no I/O, no clock.
-- Comments describe the code as it stands, and stand on their own.
+A module that turns out to need I/O leaves the pure list, and the contract says
+so, rather than moving to another package.
 
 ## Judging
 
@@ -72,7 +70,7 @@ class Asker(Protocol):
 ```
 
 `FakeAsker` is the default and is deterministic, so the whole service runs with
-no API key and no cost. `SIFT_ASKER=typesafe` selects Jev (`judge/typesafe.py`),
+no API key and no cost. `SIFT_ASKER=typesafe` selects Jev (`judging/typesafe.py`),
 which needs `TYPESAFE_API_KEY`. An asker names its `model`, and the name is part
 of the judgment cache key, so answers from one model are never read back as
 another's; `SIFT_TYPESAFE_MODEL` is therefore a pinned version, not an alias.
@@ -89,7 +87,7 @@ would rank the same papers separately.
 
 Two rules the scoring deliberately keeps:
 
-- Weights and thresholds live in `core/scoring.py` rather than in the questions,
+- Weights and thresholds live in `judging/scoring.py` rather than in the questions,
   so changing how much something counts never means asking the model again.
 - A dealbreaker is a gate, not a low weight — no amount of strength elsewhere
   should be able to average it away.
@@ -172,7 +170,7 @@ runs one (`SIFT_WORKER=false` turns it off). They coordinate through the
   next claim asks again; the dead worker's late writes no longer match the lease
   and are refused.
 - Failures are sorted and retried like every other request to arXiv
-  (`ingest/failures.py`, `core/retry.py`): a refused request fails the batch at
+  (`arxiv/failures.py`, `retry.py`): a refused request fails the batch at
   once, server trouble backs off with jitter, never sooner than a Retry-After,
   until the attempts run out.
 
@@ -199,7 +197,7 @@ any stage ──attempts run out, or a terminal failure──▶ dead
 - **fetch** downloads and extracts the PDF, unless the paper's text is stored.
 - **judge** asks merit, integrity and the same criteria of the text, with the
   reference list and what follows it cut away and the rest capped
-  (`core/text.py`): the model's input is bounded, and unrelated text costs
+  (`judging/text.py`): the model's input is bounded, and unrelated text costs
   accuracy.
 
 Stages claim items exactly as the harvest claims batches — `SKIP LOCKED`, a
@@ -220,24 +218,24 @@ per thousand papers; three seconds per PDF makes a few thousand papers hours.
 
 ## Fetching full text
 
-`ingest/fetch.py` downloads a paper's PDF from `arxiv.org/pdf/<id>` and extracts
+`arxiv/fetch.py` downloads a paper's PDF from `arxiv.org/pdf/<id>` and extracts
 its text with pypdf; the PDF itself is never kept. The units underneath each
 handle one way the network can misbehave:
 
-- `ingest/pacing.py` — a `Pacer` per host hands out one turn at a time, starting
+- `arxiv/pacing.py` — a `Pacer` per host hands out one turn at a time, starting
   no sooner than the interval after the previous turn ended. A Retry-After holds
   the whole pacer, not just the request that was refused. One pacer serves both
   the announcements and the PDFs, since both go to arXiv. It is per process: several
   processes divide `SIFT_ARXIV_INTERVAL_SECONDS` between them.
-- `ingest/extract.py` — pypdf's text is cleaned before anything stores it:
+- `arxiv/extract.py` — pypdf's text is cleaned before anything stores it:
   surrogate pairs it splits are rejoined, lone ones replaced, NUL dropped.
-- `ingest/pdf.py` — the body is streamed against a byte cap, and a deadline
+- `arxiv/pdf.py` — the body is streamed against a byte cap, and a deadline
   bounds the whole download. httpx's own timeouts are per read, so a server
   trickling one byte at a time would otherwise never trip them.
-- `ingest/failures.py` — sorts what went wrong into `Retryable` (5xx, 408, 425,
+- `arxiv/failures.py` — sorts what went wrong into `Retryable` (5xx, 408, 425,
   429, broken connections) or `Terminal` (404, 410, other 4xx, not a PDF, over
   the cap, no text layer).
-- `core/retry.py` — decides what comes next, with no clock or randomness: a
+- `retry.py` — decides what comes next, with no clock or randomness: a
   terminal failure gives up at once without spending attempts; a retryable one
   waits an exponential backoff with full jitter, never less than the server's
   Retry-After, until attempts run out.
@@ -331,7 +329,7 @@ pytest
 mypy
 ruff check .
 ruff format --check .
-python scripts/check_layering.py
+lint-imports
 python scripts/export_openapi.py --check
 
 cd ../frontend

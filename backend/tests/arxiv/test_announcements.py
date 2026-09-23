@@ -5,15 +5,15 @@ import httpx
 import pytest
 
 from arxiv_fake import Entry, FakeArxiv, feed
-from sift.core.retry import Retryable, Terminal
-from sift.ingest.announcements import (
+from sift.arxiv.announcements import (
     MalformedFeed,
     feed_url,
     fetch_announcement,
     parse_feed,
     valid_category,
 )
-from sift.ingest.failures import FetchFailed
+from sift.arxiv.failures import FetchFailed
+from sift.retry import Retryable, Terminal
 
 # A real feed, captured from arXiv and cut down to one item of each announce type.
 RECORDED = (Path(__file__).parent / "arxiv_feed.xml").read_bytes()

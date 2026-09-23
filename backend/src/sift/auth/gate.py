@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, Response, status
 
-from sift.core.auth import mint_session, session_key, session_valid
+from sift.auth.passphrase import mint_session, session_key, session_valid
 from sift.settings import Settings
 
 COOKIE = "sift_session"

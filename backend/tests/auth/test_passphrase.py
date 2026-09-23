@@ -1,4 +1,4 @@
-from sift.core.auth import (
+from sift.auth.passphrase import (
     hash_passphrase,
     mint_session,
     session_key,

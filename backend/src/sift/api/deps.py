@@ -7,7 +7,7 @@ import httpx
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from sift.core.judgments import Profile
+from sift.judging.judgments import Profile
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:

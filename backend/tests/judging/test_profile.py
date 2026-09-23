@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sift.core import profile as profiles
+from sift.judging import profile as profiles
 
 
 def test_parses_wants_and_dealbreakers() -> None:

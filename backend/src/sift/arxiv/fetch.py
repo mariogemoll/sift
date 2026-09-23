@@ -13,11 +13,11 @@ from datetime import UTC, datetime
 
 import httpx
 
-from sift.core.retry import Retryable
-from sift.ingest.extract import content_hash, extract_text
-from sift.ingest.failures import FetchFailed
-from sift.ingest.pacing import Pacer
-from sift.ingest.pdf import Limits, download_pdf
+from sift.arxiv.extract import content_hash, extract_text
+from sift.arxiv.failures import FetchFailed
+from sift.arxiv.pacing import Pacer
+from sift.arxiv.pdf import Limits, download_pdf
+from sift.retry import Retryable
 
 
 @dataclass(frozen=True, slots=True)
