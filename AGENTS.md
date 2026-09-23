@@ -153,6 +153,26 @@ At-least-once per page, idempotent writes (papers on arXiv id, items on batch
 and paper), no lost work. SQS or similar becomes worth it when the database
 stops being a comfortable place to poll — not at this scale.
 
+## Fetching full text
+
+`ingest/fetch.py` downloads a paper's PDF from `arxiv.org/pdf/<id>` and extracts
+its text with pypdf; the PDF itself is never kept. The units underneath each
+handle one way the network can misbehave:
+
+- `ingest/pacing.py` — a `Pacer` per host hands out one turn at a time, starting
+  no sooner than the interval after the previous turn ended. A Retry-After holds
+  the whole pacer, not just the request that was refused.
+- `ingest/pdf.py` — the body is streamed against a byte cap, and a deadline
+  bounds the whole download. httpx's own timeouts are per read, so a server
+  trickling one byte at a time would otherwise never trip them.
+- `ingest/failures.py` — sorts what went wrong into `Retryable` (5xx, 408, 425,
+  429, broken connections) or `Terminal` (404, 410, other 4xx, not a PDF, over
+  the cap, no text layer).
+- `core/retry.py` — decides what comes next, with no clock or randomness: a
+  terminal failure gives up at once without spending attempts; a retryable one
+  waits an exponential backoff with full jitter, never less than the server's
+  Retry-After, until attempts run out.
+
 ## Running it
 
 `.python-version` at the repo root selects the pyenv virtualenv for the whole
