@@ -109,11 +109,15 @@ one would let a stranger lock the owner out.
 ## Rate limits
 
 arXiv asks for [one request every three seconds on a single
-connection](https://info.arxiv.org/help/api/tou.html), and forbids rehosting
-PDFs. So fetching is serialized with a minimum interval while judging runs in
-parallel under its own budget — the pipeline has per-stage limiters, not one
-global semaphore — and object storage holds extracted text, never the source
-PDF.
+connection](https://info.arxiv.org/help/api/tou.html). So fetching is
+serialized with a minimum interval while judging runs in parallel under its own
+budget — the pipeline has per-stage limiters, not one global semaphore.
+
+The same terms allow storing and using the content of e-prints for personal use
+or research, and forbid serving it: most papers carry arXiv's non-exclusive
+license, which lets arXiv redistribute them and nobody else. So sift keeps the
+extracted text it judges, discards the PDF once the text is out, and links to
+arXiv for the paper itself rather than showing it.
 
 ## Listing papers
 
@@ -172,6 +176,18 @@ handle one way the network can misbehave:
   terminal failure gives up at once without spending attempts; a retryable one
   waits an exponential backoff with full jitter, never less than the server's
   Retry-After, until attempts run out.
+
+Extracted text belongs in Postgres, in its own table beside `papers`, not in
+object storage. That lets the text, the item's state change and the lease check
+commit in one transaction; with a bucket, the object is written before the row
+commits, so a worker dying in between — or one whose lease has already expired —
+leaves an object no row points to. A paper's text is on the order of 100 KB and
+Postgres compresses large values, so thousands of papers fit comfortably inside
+the storage the database is allocated anyway. S3 becomes the better place when
+the text outgrows that allocation (per gigabyte it is several times cheaper than
+RDS storage) or when something other than the database needs to read it; then
+the object is keyed by content hash, so a retried write is harmless, and the row
+holds only the key.
 
 ## Running it
 
