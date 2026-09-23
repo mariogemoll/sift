@@ -18,6 +18,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from sift.api.app import create_app
@@ -25,7 +26,23 @@ from sift.core.auth import hash_passphrase
 from sift.settings import Settings
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_URL = "postgresql+asyncpg://sift:sift@localhost:5433/sift_test"
+
+
+class TestSettings(BaseSettings):
+    """Where the suite may create, drop and migrate its database.
+
+    Read from `SIFT_TEST_DATABASE_URL` or from `.env`, so that two checkouts
+    running the suite at once can each be pointed at a database of their own —
+    the session fixture drops whatever it finds there.
+    """
+
+    __test__ = False
+    model_config = SettingsConfigDict(
+        env_prefix="SIFT_TEST_", env_file=ROOT / ".env", extra="ignore"
+    )
+
+    database_url: str = "postgresql+asyncpg://sift:sift@localhost:5433/sift_test"
+
 
 PASSPHRASE = "the test passphrase"
 # Hashed once for the whole session, with a fixed salt: scrypt is deliberately
@@ -58,7 +75,7 @@ async def _recreate(url: str) -> None:
 @pytest.fixture(scope="session")
 def database_url() -> Iterator[str]:
     """A freshly created, freshly migrated database for the whole session."""
-    url = os.environ.get("SIFT_TEST_DATABASE_URL", DEFAULT_URL)
+    url = TestSettings().database_url
     asyncio.run(_recreate(url))
     subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
