@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+.env
+.sift-cache/
+node_modules/
+dist/
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# working notes, not part of the repo
+notes/
+
+.python-version

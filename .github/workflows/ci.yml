@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sift
+          POSTGRES_PASSWORD: sift
+          POSTGRES_DB: sift
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sift"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      SIFT_DATABASE_URL: postgresql+asyncpg://sift:sift@localhost:5432/sift
+      SIFT_TEST_DATABASE_URL: postgresql+asyncpg://sift:sift@localhost:5432/sift_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      # `.python-version` names a pyenv virtualenv, not a version, so the
+      # interpreter is named explicitly rather than discovered by uv.
+      - name: Install
+        run: uv pip install --python "$(which python)" -e '.[service]' --group dev
+
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+      - run: python scripts/check_layering.py
+      - run: python scripts/export_openapi.py --check
+      - run: alembic upgrade head
+      - run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      # `defaults.run.working-directory` applies to run steps, not to actions,
+      # so the action is told where the frontend's package.json is. The pnpm
+      # version lives there and nowhere else.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: The checked-in client matches the checked-in schema
+        run: |
+          pnpm run generate
+          git diff --exit-code src/api/schema.ts
+
+      - run: pnpm run typecheck
+      - run: pnpm run build

@@ -1,0 +1,130 @@
+:root {
+  --bg: #fbfbf9;
+  --fg: #1b1b18;
+  --muted: #6b6b63;
+  --line: #e3e3dc;
+  --accent: #2f5d50;
+  --bad: #8c2f2f;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171a;
+    --fg: #e9e9e4;
+    --muted: #9a9a92;
+    --line: #2c2e33;
+    --accent: #7fbfa8;
+    --bad: #e08a8a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+main {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 3rem 1rem 6rem;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+header p {
+  margin: 0.35rem 0 0.9rem;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+}
+
+.badge.good {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.badge.bad {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin: 0 0 0.75rem;
+}
+
+.note.error {
+  color: var(--bad);
+}
+
+table.papers {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.papers th {
+  text-align: left;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 0 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+table.papers td {
+  padding: 0.7rem 0.75rem 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+table.papers a {
+  color: inherit;
+}
+
+td.date,
+td.categories {
+  white-space: nowrap;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+tr.empty td {
+  padding: 3rem 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+tr.empty span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.86rem;
+}
