@@ -72,7 +72,20 @@ class Asker(Protocol):
 ```
 
 `FakeAsker` is the default and is deterministic, so the whole service runs with
-no API key and no cost. `SIFT_ASKER` selects a live adapter instead.
+no API key and no cost. `SIFT_ASKER=typesafe` selects Jev (`judge/typesafe.py`),
+which needs `TYPESAFE_API_KEY`. An asker names its `model`, and the name is part
+of the judgment cache key, so answers from one model are never read back as
+another's; `SIFT_TYPESAFE_MODEL` is therefore a pinned version, not an alias.
+The SDK runs with its own retries off: the pipeline's persisted, jittered retry
+is the one policy.
+
+What this deployment reads and how it ranks it is `backend/wishlist.toml`, in
+the repository so a reader can see exactly what the model is asked: the arXiv
+`categories` to harvest, a `background`, weighted `[[want]]` interests,
+`[[dealbreaker]]` gates, and thresholds. The service refuses to start without a
+category it can harvest. `POST /batches` takes a date and queues one batch per
+category. Verdicts are filed under the wishlist's `name`, so a second wishlist
+would rank the same papers separately.
 
 Two rules the scoring deliberately keeps:
 
@@ -157,6 +170,42 @@ At-least-once per page, idempotent writes (papers on arXiv id, items on batch
 and paper), no lost work. SQS or similar becomes worth it when the database
 stops being a comfortable place to poll — not at this scale.
 
+## The funnel
+
+Most papers are never worth reading, so most are never downloaded. Each
+harvested paper becomes a batch item that waits for one stage at a time:
+
+```
+screen ──passes──▶ fetch ──▶ judge ──▶ done
+   └──passed over───────────────────▶ done
+any stage ──attempts run out, or a terminal failure──▶ dead
+```
+
+- **screen** asks the wishlist's questions of the title and abstract, which come
+  with the listing. A paper passes if no dealbreaker blocks it and its fit
+  reaches `screen_threshold`.
+- **fetch** downloads and extracts the PDF, unless the paper's text is stored.
+- **judge** asks merit, integrity and the same criteria of the text, with the
+  reference list and what follows it cut away and the rest capped
+  (`core/text.py`): the model's input is bounded, and unrelated text costs
+  accuracy.
+
+Stages claim items exactly as the harvest claims batches — `SKIP LOCKED`, a
+lease, writes guarded by it — and each is limited on its own: the screen and the
+judge by how many workers run them, the fetch by the arXiv pacer. Every stage is
+safe to repeat: answers are cached by a hash of all the model was given, text is
+stored once per paper, and a verdict is written in place, so a paper in two
+overlapping batches costs lookups, not a second download or a second answer. A
+screen never replaces a full verdict.
+
+With the fake asker, PDFs are not downloaded (`SIFT_DOWNLOAD` overrides): its
+answers ignore the text, so a download would load arXiv for nothing. The judge
+then reads the abstract, and nothing is stored in place of the text, so a later
+run with a real model still fetches the paper.
+
+The funnel exists for arXiv's sake, not the model bill's. Jev input costs cents
+per thousand papers; three seconds per PDF makes a few thousand papers hours.
+
 ## Fetching full text
 
 `ingest/fetch.py` downloads a paper's PDF from `arxiv.org/pdf/<id>` and extracts
@@ -165,7 +214,11 @@ handle one way the network can misbehave:
 
 - `ingest/pacing.py` — a `Pacer` per host hands out one turn at a time, starting
   no sooner than the interval after the previous turn ended. A Retry-After holds
-  the whole pacer, not just the request that was refused.
+  the whole pacer, not just the request that was refused. One pacer serves both
+  the listing and the PDFs, since both go to arXiv. It is per process: several
+  processes divide `SIFT_ARXIV_INTERVAL_SECONDS` between them.
+- `ingest/extract.py` — pypdf's text is cleaned before anything stores it:
+  surrogate pairs it splits are rejoined, lone ones replaced, NUL dropped.
 - `ingest/pdf.py` — the body is streamed against a byte cap, and a deadline
   bounds the whole download. httpx's own timeouts are per read, so a server
   trickling one byte at a time would otherwise never trip them.

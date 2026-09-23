@@ -29,15 +29,16 @@ EAGER = Pacing(
 )
 
 
-async def submit(client: AsyncClient, category: str = "cs.IR") -> int:
-    response = await client.post("/batches", json={"category": category, "since": "2026-09-16"})
+async def submit(client: AsyncClient) -> int:
+    """Queue a batch for the test wishlist's one category."""
+    response = await client.post("/batches", json={"since": "2026-09-16"})
     assert response.status_code == 202
-    batch_id: int = response.json()["id"]
+    batch_id: int = response.json()[0]["id"]
     return batch_id
 
 
 async def step(app: FastAPI, pacing: Pacing = EAGER) -> bool:
-    return await harvest_step(app.state.session_factory, app.state.http, pacing)
+    return await harvest_step(app.state.session_factory, app.state.http, app.state.arxiv, pacing)
 
 
 async def batch(client: AsyncClient, batch_id: int) -> dict[str, object]:
@@ -118,7 +119,7 @@ async def test_a_rejected_request_fails_the_batch_at_once(
     app: FastAPI, client: AsyncClient, arxiv: FakeArxiv
 ) -> None:
     arxiv.body = oai_error("badArgument", "Set does not exist")
-    batch_id = await submit(client, category="zz.XX")
+    batch_id = await submit(client)
 
     await step(app)
     after = await batch(client, batch_id)
@@ -218,7 +219,9 @@ async def test_the_worker_loop_runs_a_batch_to_completion_and_stops_when_told(
     batch_id = await submit(client)
 
     stop = asyncio.Event()
-    worker = asyncio.create_task(run_worker(app.state.session_factory, app.state.http, EAGER, stop))
+    worker = asyncio.create_task(
+        run_worker(app.state.session_factory, app.state.http, app.state.arxiv, EAGER, stop)
+    )
     async with asyncio.timeout(5):
         while (await batch(client, batch_id))["state"] != "done":
             await asyncio.sleep(0.05)

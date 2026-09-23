@@ -2,7 +2,7 @@ import pytest
 
 from pdf_fake import pdf
 from sift.core.retry import Terminal
-from sift.ingest.extract import content_hash, extract_text
+from sift.ingest.extract import clean, content_hash, extract_text
 from sift.ingest.failures import FetchFailed
 
 
@@ -34,3 +34,18 @@ def test_the_hash_is_of_the_text_so_the_same_text_dedupes() -> None:
 
 def test_the_hash_is_hex_sha256() -> None:
     assert content_hash("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+
+def test_a_split_surrogate_pair_is_joined_into_its_character() -> None:
+    """How pypdf can return a mathematical italic x, U+1D465."""
+    assert clean("let 𝑥 be") == "let \U0001d465 be"
+
+
+def test_a_lone_surrogate_is_replaced_so_the_text_encodes() -> None:
+    cleaned = clean("broken \ud835 here")
+    assert cleaned == "broken � here"
+    assert content_hash(cleaned)
+
+
+def test_nul_is_dropped() -> None:
+    assert clean("a\x00b") == "ab"

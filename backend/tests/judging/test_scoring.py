@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from sift.core import questions, scoring
 from sift.core.judgments import Judgments, Profile, ScoreValue
 
@@ -118,3 +120,66 @@ def test_score_blend_is_explicit(profile: Profile) -> None:
     verdict = scoring.evaluate("p", _judgments(), profile)
     assert abs(verdict.fit - 0.8) < 1e-10
     assert abs(verdict.total - (0.4 * 2 / 3 + 0.6 * 0.8)) < 1e-10
+
+
+def _screen_judgments(
+    *, reproducible: float = 3.0, robotics: float = 0.0, retracted: float = 0.05
+) -> Judgments:
+    return Judgments(
+        nouls={"block_retracted": retracted},
+        scores={
+            "want_reproducible": ScoreValue(reproducible, 3, 0.9),
+            "want_robotics": ScoreValue(robotics, 3, 0.9),
+        },
+    )
+
+
+def test_a_screen_ranks_on_fit_alone(profile: Profile) -> None:
+    verdict = scoring.screen("p", _screen_judgments(), profile)
+
+    assert verdict.stage == "screen"
+    assert verdict.merit is None
+    assert abs(verdict.total - verdict.fit) < 1e-10
+    assert abs(verdict.fit - 0.8) < 1e-10
+
+
+def test_a_screen_applies_the_dealbreakers(profile: Profile) -> None:
+    verdict = scoring.screen("p", _screen_judgments(retracted=0.95), profile)
+
+    assert not verdict.eligible
+    assert verdict.blocked_by == ("retracted",)
+
+
+def test_a_screen_does_not_want_merit_or_integrity_answers(profile: Profile) -> None:
+    """Those are asked of the full text only, so their absence is no reason for review."""
+    assert not scoring.screen("p", _screen_judgments(), profile).needs_review
+
+
+def test_a_screen_doubts_what_a_full_judgment_would(profile: Profile) -> None:
+    near_gate = _screen_judgments(retracted=profile.dealbreaker_threshold)
+    assert scoring.screen("p", near_gate, profile).needs_review
+    assert scoring.screen("p", Judgments(), profile).needs_review
+
+
+def test_passing_the_screen_takes_fit_and_no_dealbreaker(profile: Profile) -> None:
+    strong = scoring.screen("strong", _screen_judgments(), profile)
+    weak = scoring.screen("weak", _screen_judgments(reproducible=0.0), profile)
+    blocked = scoring.screen("blocked", _screen_judgments(retracted=0.95), profile)
+
+    assert scoring.passes_screen(strong, profile)
+    assert not scoring.passes_screen(weak, profile)
+    assert not scoring.passes_screen(blocked, profile)
+    assert not scoring.passes_screen(strong, replace(profile, screen_threshold=0.9))
+
+
+def test_full_verdicts_rank_ahead_of_screens(profile: Profile) -> None:
+    """The totals are on different scales; a full verdict has already passed a screen."""
+    screened = scoring.screen(
+        "screened", _screen_judgments(reproducible=3.0, robotics=3.0), profile
+    )
+    judged = scoring.evaluate("judged", _judgments(reproducible=0.0, merit_score=0.0), profile)
+    blocked = scoring.evaluate("blocked", _judgments(retracted=0.99), profile)
+
+    ranked = scoring.rank([blocked, screened, judged])
+
+    assert [v.document_id for v in ranked] == ["judged", "screened", "blocked"]

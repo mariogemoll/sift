@@ -41,7 +41,9 @@ export interface paths {
         put?: never;
         /**
          * Submit Batch
-         * @description Queue a harvest. The window closes today, so the batch means the same thing when it runs.
+         * @description Queue one harvest per category the wishlist names, in the wishlist's order.
+         *
+         *     The window closes today, so each batch means the same thing when it runs.
          */
         post: operations["submit_batch_batches_post"];
         delete?: never;
@@ -91,8 +93,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Papers */
+        /**
+         * Get Papers
+         * @description Papers with their verdicts, best first; `days` keeps to recent ones.
+         */
         get: operations["get_papers_papers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile */
+        get: operations["get_profile_profile_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -106,12 +128,22 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AssessedOut
+         * @description A paper, and its verdict once it has been screened.
+         */
+        AssessedOut: {
+            paper: components["schemas"]["PaperOut"];
+            verdict: components["schemas"]["VerdictOut"] | null;
+        };
+        /**
          * BatchOut
          * @description A batch and how far it has got.
          *
          *     `added` counts papers new to the system; `items` counts every paper the batch
-         *     has seen. `attempts` and `last_error` describe failures since the last page
-         *     that succeeded.
+         *     has seen, and `progress` how many wait for each stage or ended in `done` or
+         *     `dead`. `state` is the harvest's alone; `status` is the batch's as a whole,
+         *     `processing` while its papers are still between stages. `attempts` and
+         *     `last_error` describe harvest failures since the last page that succeeded.
          */
         BatchOut: {
             /** Added */
@@ -135,6 +167,10 @@ export interface components {
             last_error: string | null;
             /** Pages */
             pages: number;
+            /** Progress */
+            progress: {
+                [key: string]: number;
+            };
             /**
              * Since
              * Format: date
@@ -146,6 +182,11 @@ export interface components {
              */
             state: "queued" | "harvesting" | "done" | "failed";
             /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "harvesting" | "processing" | "done" | "failed";
+            /**
              * Until
              * Format: date
              */
@@ -153,19 +194,29 @@ export interface components {
         };
         /**
          * BatchRequest
-         * @description Which papers to pull in: one arXiv category, new or revised on or after a date.
+         * @description Which papers to pull in: those new or revised on or after a date, in every
+         *     category the wishlist names.
          */
         BatchRequest: {
-            /**
-             * Category
-             * @example cs.IR
-             */
-            category: string;
             /**
              * Since
              * Format: date
              */
             since: string;
+        };
+        /** CriterionOut */
+        CriterionOut: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "want" | "dealbreaker";
+            /** Requirement */
+            requirement: string;
+            /** Weight */
+            weight: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -208,13 +259,31 @@ export interface components {
         /** PaperPage */
         PaperPage: {
             /** Items */
-            items: components["schemas"]["PaperOut"][];
+            items: components["schemas"]["AssessedOut"][];
             /** Limit */
             limit: number;
             /** Offset */
             offset: number;
             /** Total */
             total: number;
+        };
+        /**
+         * ProfileOut
+         * @description The wishlist papers are ranked against, and the thresholds applied to it.
+         */
+        ProfileOut: {
+            /** Categories */
+            categories: string[];
+            /** Criteria */
+            criteria: components["schemas"]["CriterionOut"][];
+            /** Dealbreaker Threshold */
+            dealbreaker_threshold: number;
+            /** Merit Weight */
+            merit_weight: number;
+            /** Name */
+            name: string;
+            /** Screen Threshold */
+            screen_threshold: number;
         };
         /**
          * SessionStatus
@@ -249,6 +318,40 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VerdictOut
+         * @description Where a paper stands against the wishlist.
+         *
+         *     `stage` is `screen` when only the abstract was judged — `merit` is then null
+         *     and `total` is fit alone — and `full` once the text was. The two totals are
+         *     not on one scale. `per_criterion` holds each research interest's position on
+         *     its levels, from 0 to 1: an ordering, not a percentage.
+         */
+        VerdictOut: {
+            /** Blocked By */
+            blocked_by: string[];
+            /** Eligible */
+            eligible: boolean;
+            /** Fit */
+            fit: number;
+            /** Merit */
+            merit: number | null;
+            /** Needs Review */
+            needs_review: boolean;
+            /** Notes */
+            notes: string[];
+            /** Per Criterion */
+            per_criterion: {
+                [key: string]: number;
+            };
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "screen" | "full";
+            /** Total */
+            total: number;
         };
     };
     responses: never;
@@ -380,7 +483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchOut"];
+                    "application/json": components["schemas"]["BatchOut"][];
                 };
             };
             /** @description Validation Error */
@@ -450,6 +553,9 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                /** @description Published within this many days */
+                days?: number | null;
+                order?: "rank" | "newest";
             };
             header?: never;
             path?: never;
@@ -473,6 +579,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileOut"];
                 };
             };
         };

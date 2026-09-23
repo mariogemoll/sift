@@ -1,0 +1,15 @@
+# The wishlist the test suite ranks against; independent of the shipped one.
+name = "test"
+background = "Research in robot learning."
+categories = ["cs.RO"]
+
+[settings]
+screen_threshold = 0.5
+
+[[want]]
+id = "robotics"
+requirement = "The paper studies robotics"
+
+[[dealbreaker]]
+id = "retracted"
+requirement = "The paper has been retracted"

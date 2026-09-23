@@ -53,7 +53,31 @@ def _criteria_of(kind: Kind, raw: object) -> list[Criterion]:
     return criteria
 
 
-def parse(wishlist: Mapping[str, object], background: str) -> Profile:
+def _text(wishlist: Mapping[str, object], key: str, default: str) -> str:
+    value = wishlist.get(key, default)
+    if not isinstance(value, str):
+        raise ProfileError(f"{key} must be a string")
+    return value.strip()
+
+
+def _categories(wishlist: Mapping[str, object]) -> tuple[str, ...]:
+    raw = wishlist.get("categories", [])
+    if not isinstance(raw, list) or not all(isinstance(c, str) and c.strip() for c in raw):
+        raise ProfileError("categories must be a list of non-empty strings")
+    categories = tuple(c.strip() for c in raw)
+    if len(set(categories)) != len(categories):
+        raise ProfileError("duplicate categories")
+    return categories
+
+
+def parse(wishlist: Mapping[str, object]) -> Profile:
+    """A wishlist: an optional `name`, `background` and `categories`, criteria, and
+    optional settings."""
+    name = _text(wishlist, "name", "default")
+    if not name:
+        raise ProfileError("name cannot be empty")
+    background = _text(wishlist, "background", "")
+    categories = _categories(wishlist)
     criteria = _criteria_of("want", wishlist.get("want", ()))
     criteria += _criteria_of("dealbreaker", wishlist.get("dealbreaker", ()))
     if not criteria:
@@ -69,6 +93,7 @@ def parse(wishlist: Mapping[str, object], background: str) -> Profile:
         "dealbreaker_threshold": 0.7,
         "review_confidence": 0.5,
         "review_margin": 0.05,
+        "screen_threshold": 0.5,
     }
     unknown = settings.keys() - defaults.keys()
     if unknown:
@@ -77,12 +102,18 @@ def parse(wishlist: Mapping[str, object], background: str) -> Profile:
         name: _number(settings.get(name, default), name, unit=True)
         for name, default in defaults.items()
     }
-    return Profile(background=background, criteria=tuple(criteria), **values)
+    return Profile(
+        background=background,
+        criteria=tuple(criteria),
+        name=name,
+        categories=categories,
+        **values,
+    )
 
 
-def parse_toml(text: str, background: str) -> Profile:
+def parse_toml(text: str) -> Profile:
     try:
         wishlist = tomllib.loads(text)
     except tomllib.TOMLDecodeError as error:
         raise ProfileError(str(error)) from error
-    return parse(wishlist, background)
+    return parse(wishlist)

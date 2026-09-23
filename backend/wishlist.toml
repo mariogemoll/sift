@@ -1,0 +1,85 @@
+# What this deployment reads, and how it ranks what it reads.
+#
+# The reader: a team building LLM agents for post-trade operations at investment
+# managers. Their agents gather evidence from trade systems, counterparty files
+# and email, work out why records disagree, and propose a fix that a human
+# approves. So the interests below are the research that would change how such
+# agents are built — not finance in general.
+#
+# Each [[want]] is an interest, judged on a ladder from "unrelated" to "centrally
+# about this" and blended by weight. Each [[dealbreaker]] is a gate: a paper that
+# meets it is blocked however well it scores otherwise. Weights and thresholds
+# can change without asking the model again; the wording of a requirement cannot.
+
+name = "post-trade-agents"
+
+background = """
+A team building LLM agents for post-trade operations at investment managers:
+trade affirmations, reconciliations, settlements. The agents gather evidence
+from trade databases, broker and custodian files, and email; work out why
+records from different systems disagree; propose a resolution; and leave the
+final approval to a human operator. The team cares about agents that are
+reliable, auditable, know when to escalate, and learn a firm's unwritten
+conventions.
+"""
+
+# Agents, language, multi-agent systems, and data management. cs.LG is left out
+# on purpose: it is the largest category and mostly unrelated, and the agent
+# papers in it are nearly always cross-listed to one of these.
+categories = ["cs.AI", "cs.CL", "cs.MA", "cs.DB"]
+
+[settings]
+merit_weight = 0.4           # merit's share of a full-text total; fit gets the rest
+dealbreaker_threshold = 0.7  # P(yes) above which a dealbreaker blocks
+screen_threshold = 0.5       # least abstract fit that earns a full-text read
+
+[[want]]
+id = "agent_reliability"
+requirement = "Improves how reliably LLM agents complete multi-step tasks using tools and external systems, including recovering from errors"
+weight = 2.0
+
+[[want]]
+id = "root_cause"
+requirement = "Diagnoses the root cause of anomalies or discrepancies by tracing dependencies across data sources or system layers"
+weight = 2.0
+
+[[want]]
+id = "escalation"
+requirement = "Decides when a model should act on its own, abstain, or defer to a human, using calibrated confidence"
+weight = 2.0
+
+[[want]]
+id = "record_matching"
+requirement = "Matches, links, or reconciles records that describe the same entity or transaction across heterogeneous sources"
+weight = 1.5
+
+[[want]]
+id = "document_extraction"
+requirement = "Extracts structured information from semi-structured business documents, tables, or emails"
+weight = 1.5
+
+[[want]]
+id = "evidence"
+requirement = "Grounds model decisions in cited evidence so that a human can verify them quickly"
+weight = 1.5
+
+[[want]]
+id = "memory"
+requirement = "Lets agents accumulate and reuse organisation-specific knowledge or conventions from past cases and human feedback"
+weight = 1.5
+
+[[want]]
+id = "agent_security"
+requirement = "Defends agents that read untrusted external content, such as email, against prompt injection or manipulation"
+weight = 1.0
+
+[[want]]
+id = "finance_ops"
+requirement = "Applies AI to financial operations such as settlement, reconciliation, compliance, or fund accounting"
+weight = 1.0
+
+# Finance papers are overwhelmingly about forecasting markets, which is not this
+# reader's problem; without this gate, finance_ops would let them through.
+[[dealbreaker]]
+id = "market_prediction"
+requirement = "The paper is about predicting prices, returns, or trading signals"

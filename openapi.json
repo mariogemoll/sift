@@ -1,8 +1,32 @@
 {
   "components": {
     "schemas": {
+      "AssessedOut": {
+        "description": "A paper, and its verdict once it has been screened.",
+        "properties": {
+          "paper": {
+            "$ref": "#/components/schemas/PaperOut"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerdictOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "paper",
+          "verdict"
+        ],
+        "title": "AssessedOut",
+        "type": "object"
+      },
       "BatchOut": {
-        "description": "A batch and how far it has got.\n\n`added` counts papers new to the system; `items` counts every paper the batch\nhas seen. `attempts` and `last_error` describe failures since the last page\nthat succeeded.",
+        "description": "A batch and how far it has got.\n\n`added` counts papers new to the system; `items` counts every paper the batch\nhas seen, and `progress` how many wait for each stage or ended in `done` or\n`dead`. `state` is the harvest's alone; `status` is the batch's as a whole,\n`processing` while its papers are still between stages. `attempts` and\n`last_error` describe harvest failures since the last page that succeeded.",
         "properties": {
           "added": {
             "title": "Added",
@@ -56,6 +80,22 @@
             "title": "Pages",
             "type": "integer"
           },
+          "progress": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "enum": [
+                "screen",
+                "fetch",
+                "judge",
+                "done",
+                "dead"
+              ]
+            },
+            "title": "Progress",
+            "type": "object"
+          },
           "since": {
             "format": "date",
             "title": "Since",
@@ -69,6 +109,17 @@
               "failed"
             ],
             "title": "State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "harvesting",
+              "processing",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
             "type": "string"
           },
           "until": {
@@ -86,6 +137,8 @@
           "pages",
           "added",
           "items",
+          "progress",
+          "status",
           "attempts",
           "last_error",
           "created_at",
@@ -95,15 +148,8 @@
         "type": "object"
       },
       "BatchRequest": {
-        "description": "Which papers to pull in: one arXiv category, new or revised on or after a date.",
+        "description": "Which papers to pull in: those new or revised on or after a date, in every\ncategory the wishlist names.",
         "properties": {
-          "category": {
-            "examples": [
-              "cs.IR"
-            ],
-            "title": "Category",
-            "type": "string"
-          },
           "since": {
             "format": "date",
             "title": "Since",
@@ -111,10 +157,41 @@
           }
         },
         "required": [
-          "category",
           "since"
         ],
         "title": "BatchRequest",
+        "type": "object"
+      },
+      "CriterionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "want",
+              "dealbreaker"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "requirement": {
+            "title": "Requirement",
+            "type": "string"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "requirement",
+          "weight"
+        ],
+        "title": "CriterionOut",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -210,7 +287,7 @@
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/PaperOut"
+              "$ref": "#/components/schemas/AssessedOut"
             },
             "title": "Items",
             "type": "array"
@@ -235,6 +312,51 @@
           "offset"
         ],
         "title": "PaperPage",
+        "type": "object"
+      },
+      "ProfileOut": {
+        "description": "The wishlist papers are ranked against, and the thresholds applied to it.",
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionOut"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "dealbreaker_threshold": {
+            "title": "Dealbreaker Threshold",
+            "type": "number"
+          },
+          "merit_weight": {
+            "title": "Merit Weight",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "screen_threshold": {
+            "title": "Screen Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "categories",
+          "criteria",
+          "merit_weight",
+          "dealbreaker_threshold",
+          "screen_threshold"
+        ],
+        "title": "ProfileOut",
         "type": "object"
       },
       "SessionStatus": {
@@ -309,6 +431,80 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VerdictOut": {
+        "description": "Where a paper stands against the wishlist.\n\n`stage` is `screen` when only the abstract was judged \u2014 `merit` is then null\nand `total` is fit alone \u2014 and `full` once the text was. The two totals are\nnot on one scale. `per_criterion` holds each research interest's position on\nits levels, from 0 to 1: an ordering, not a percentage.",
+        "properties": {
+          "blocked_by": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blocked By",
+            "type": "array"
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "fit": {
+            "title": "Fit",
+            "type": "number"
+          },
+          "merit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merit"
+          },
+          "needs_review": {
+            "title": "Needs Review",
+            "type": "boolean"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "per_criterion": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Per Criterion",
+            "type": "object"
+          },
+          "stage": {
+            "enum": [
+              "screen",
+              "full"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "number"
+          }
+        },
+        "required": [
+          "stage",
+          "eligible",
+          "total",
+          "merit",
+          "fit",
+          "blocked_by",
+          "needs_review",
+          "notes",
+          "per_criterion"
+        ],
+        "title": "VerdictOut",
         "type": "object"
       }
     }
@@ -443,7 +639,7 @@
         ]
       },
       "post": {
-        "description": "Queue a harvest. The window closes today, so the batch means the same thing when it runs.",
+        "description": "Queue one harvest per category the wishlist names, in the wishlist's order.\n\nThe window closes today, so each batch means the same thing when it runs.",
         "operationId": "submit_batch_batches_post",
         "requestBody": {
           "content": {
@@ -460,7 +656,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BatchOut"
+                  "items": {
+                    "$ref": "#/components/schemas/BatchOut"
+                  },
+                  "title": "Response Submit Batch Batches Post",
+                  "type": "array"
                 }
               }
             },
@@ -548,6 +748,7 @@
     },
     "/papers": {
       "get": {
+        "description": "Papers with their verdicts, best first; `days` keeps to recent ones.",
         "operationId": "get_papers_papers_get",
         "parameters": [
           {
@@ -571,6 +772,40 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "description": "Published within this many days",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 3650,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Published within this many days",
+              "title": "Days"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "default": "rank",
+              "enum": [
+                "rank",
+                "newest"
+              ],
+              "title": "Order",
+              "type": "string"
             }
           }
         ],
@@ -599,6 +834,27 @@
         "summary": "Get Papers",
         "tags": [
           "papers"
+        ]
+      }
+    },
+    "/profile": {
+      "get": {
+        "operationId": "get_profile_profile_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Profile",
+        "tags": [
+          "profile"
         ]
       }
     }

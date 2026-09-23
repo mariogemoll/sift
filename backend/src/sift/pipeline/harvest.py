@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from sift.core.batches import after_failure
 from sift.ingest.listing import ListingError, QueryRejected, fetch_page, first_page, next_page
+from sift.ingest.pacing import Pacer
 from sift.storage.batches import claim_batch, record_failure, record_page
 from sift.storage.engine import session_scope
 
@@ -37,9 +38,16 @@ class Pacing:
 
 
 async def harvest_step(
-    factory: async_sessionmaker[AsyncSession], http: httpx.AsyncClient, pacing: Pacing
+    factory: async_sessionmaker[AsyncSession],
+    http: httpx.AsyncClient,
+    arxiv: Pacer,
+    pacing: Pacing,
 ) -> bool:
-    """Advance one batch by one page. False when there was nothing to claim."""
+    """Advance one batch by one page. False when there was nothing to claim.
+
+    The request takes a turn from `arxiv`, the pacer PDF downloads share, so
+    listing and fetching together keep to arXiv's one request at a time.
+    """
     async with session_scope(factory) as session:
         claim = await claim_batch(session, pacing.lease)
     if claim is None:
@@ -51,7 +59,8 @@ async def harvest_step(
         else first_page(claim.category, claim.since, claim.until)
     )
     try:
-        listing = await fetch_page(http, params)
+        async with arxiv.turn():
+            listing = await fetch_page(http, params)
     except ListingError as error:
         outcome = after_failure(claim.attempts + 1, retryable=not isinstance(error, QueryRejected))
         async with session_scope(factory) as session:
@@ -74,6 +83,7 @@ async def harvest_step(
 async def run_worker(
     factory: async_sessionmaker[AsyncSession],
     http: httpx.AsyncClient,
+    arxiv: Pacer,
     pacing: Pacing,
     stop: asyncio.Event,
 ) -> None:
@@ -84,7 +94,7 @@ async def run_worker(
     """
     while not stop.is_set():
         try:
-            worked = await harvest_step(factory, http, pacing)
+            worked = await harvest_step(factory, http, arxiv, pacing)
         except Exception:
             logger.exception("harvest step failed")
             worked = False

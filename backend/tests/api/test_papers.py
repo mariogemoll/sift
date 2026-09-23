@@ -1,9 +1,10 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.storage.models import Paper
+from sift.storage.models import Paper, Verdict
 
 
 async def test_papers_is_empty_before_anything_is_ingested(
@@ -54,8 +55,8 @@ async def test_papers_returns_stored_rows_newest_first(
 
     body = (await client.get("/papers")).json()
     assert body["total"] == 2
-    assert [item["title"] for item in body["items"]] == ["Newer", "Older"]
-    assert body["items"][0]["authors"] == ["B. Author", "C. Author"]
+    assert [item["paper"]["title"] for item in body["items"]] == ["Newer", "Older"]
+    assert body["items"][0]["paper"]["authors"] == ["B. Author", "C. Author"]
 
 
 async def test_the_window_slices_a_longer_list(client: AsyncClient, session: AsyncSession) -> None:
@@ -76,4 +77,96 @@ async def test_the_window_slices_a_longer_list(client: AsyncClient, session: Asy
 
     body = (await client.get("/papers", params={"limit": 2, "offset": 1})).json()
     assert body["total"] == 5
-    assert [item["title"] for item in body["items"]] == ["Paper 4", "Paper 3"]
+    assert [item["paper"]["title"] for item in body["items"]] == ["Paper 4", "Paper 3"]
+
+
+async def test_days_keeps_to_recently_published_papers(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    now = datetime.now(UTC)
+    session.add_all(
+        [
+            Paper(
+                arxiv_id=f"2609.{age:05d}",
+                title=f"{age} days old",
+                authors=[],
+                categories=[],
+                published_at=now - timedelta(days=age, hours=1),
+                abstract="",
+            )
+            for age in (0, 3, 10)
+        ]
+    )
+    await session.commit()
+
+    body = (await client.get("/papers", params={"days": 7})).json()
+
+    assert body["total"] == 2
+    assert [item["paper"]["title"] for item in body["items"]] == ["0 days old", "3 days old"]
+    assert (await client.get("/papers", params={"days": 0})).status_code == 422
+
+
+async def test_newest_ignores_verdicts(client: AsyncClient, session: AsyncSession) -> None:
+    session.add_all(
+        [
+            Paper(
+                arxiv_id="2609.00001",
+                title="Older",
+                authors=[],
+                categories=[],
+                published_at=datetime(2026, 9, 1, tzinfo=UTC),
+                abstract="",
+            ),
+            Paper(
+                arxiv_id="2609.00002",
+                title="Newer",
+                authors=[],
+                categories=[],
+                published_at=datetime(2026, 9, 2, tzinfo=UTC),
+                abstract="",
+            ),
+        ]
+    )
+    await session.flush()
+    older = await session.scalar(select(Paper.id).where(Paper.title == "Older"))
+    assert older is not None
+    session.add(
+        Verdict(
+            paper_id=older,
+            profile="test",
+            stage="full",
+            eligible=True,
+            total=0.9,
+            merit=0.9,
+            fit=0.9,
+            blocked_by=[],
+            needs_review=False,
+            notes=[],
+            per_criterion={"robotics": 0.9},
+            judgment_key="k",
+        )
+    )
+    await session.commit()
+
+    ranked = (await client.get("/papers")).json()["items"]
+    newest = (await client.get("/papers", params={"order": "newest"})).json()["items"]
+
+    assert [item["paper"]["title"] for item in ranked] == ["Older", "Newer"]
+    assert ranked[0]["verdict"]["per_criterion"] == {"robotics": 0.9}
+    assert ranked[1]["verdict"] is None
+    assert [item["paper"]["title"] for item in newest] == ["Newer", "Older"]
+
+
+async def test_the_wishlist_is_readable(client: AsyncClient) -> None:
+    body = (await client.get("/profile")).json()
+
+    assert body["name"] == "test"
+    assert [(c["id"], c["kind"]) for c in body["criteria"]] == [
+        ("robotics", "want"),
+        ("retracted", "dealbreaker"),
+    ]
+    assert body["screen_threshold"] == 0.5
+
+
+async def test_the_wishlist_needs_a_session(anonymous: AsyncClient) -> None:
+    assert (await anonymous.get("/profile")).status_code == 401

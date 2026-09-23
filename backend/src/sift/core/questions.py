@@ -1,4 +1,10 @@
-"""Build document questions without weights, thresholds, or model SDK types."""
+"""Build document questions without weights, thresholds, or model SDK types.
+
+Two sets. The screen asks only about the criteria, of a paper's title and
+abstract, which arrive with the listing and need no download. The full judgment
+asks the same criteria of the extracted text, plus merit and the integrity
+checks that only make sense for text somebody extracted.
+"""
 
 from collections.abc import Mapping
 
@@ -18,16 +24,44 @@ MERIT_LEVELS = (
     "The document makes a substantial contribution supported by strong evidence",
 )
 DEFAULT_WANT_LEVELS = (
-    "The document rules this out, or states the opposite",
-    "The document does not address this either way",
-    "The document partly satisfies this",
-    "The document clearly satisfies this",
+    "The document is unrelated to this interest",
+    "The document touches on this only in passing",
+    "The document addresses this as a substantial part of its work",
+    "The document is centrally about this",
 )
 
 
 def state_for(document: Document, profile: Profile) -> Mapping[str, str]:
     """The extracted text and reader context; callers handle any trimming."""
     return {"document": document.text, "background": profile.background}
+
+
+def screen_state_for(title: str, abstract: str, profile: Profile) -> Mapping[str, str]:
+    """A paper as its listing describes it, under the same key the full text uses,
+    so the criteria questions read the same in both stages."""
+    return {"document": f"{title}\n\n{abstract}", "background": profile.background}
+
+
+def criteria(profile: Profile) -> Mapping[str, Question]:
+    """One question per research interest and per dealbreaker."""
+    questions: dict[str, Question] = {}
+    for criterion in profile.wants:
+        questions[WANT_PREFIX + criterion.id] = Score(
+            {
+                "question": "How well does `document` satisfy this research interest, "
+                "given the reader's `background`?",
+                "requirement": criterion.requirement,
+            },
+            tuple(criterion.levels) or DEFAULT_WANT_LEVELS,
+        )
+    for criterion in profile.dealbreakers:
+        questions[BLOCK_PREFIX + criterion.id] = Noul(
+            {
+                "question": "Does `document` meet the disqualifying condition below?",
+                "condition": criterion.requirement,
+            },
+        )
+    return questions
 
 
 def build(document: Document, profile: Profile) -> Mapping[str, Question]:
@@ -46,20 +80,4 @@ def build(document: Document, profile: Profile) -> Mapping[str, Question]:
             MERIT_LEVELS,
         ),
     }
-    for criterion in profile.wants:
-        questions[WANT_PREFIX + criterion.id] = Score(
-            {
-                "question": "How well does `document` satisfy this research interest, "
-                "given the reader's `background`?",
-                "requirement": criterion.requirement,
-            },
-            tuple(criterion.levels) or DEFAULT_WANT_LEVELS,
-        )
-    for criterion in profile.dealbreakers:
-        questions[BLOCK_PREFIX + criterion.id] = Noul(
-            {
-                "question": "Does `document` meet the disqualifying condition below?",
-                "condition": criterion.requirement,
-            },
-        )
-    return questions
+    return {**questions, **criteria(profile)}

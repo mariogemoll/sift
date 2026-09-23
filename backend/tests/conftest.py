@@ -100,10 +100,25 @@ def passphrase_hash() -> str:
     return PASSPHRASE_HASH
 
 
+WISHLIST = ROOT / "tests" / "wishlist.toml"
+
+
+def _settings(database_url: str, passphrase_hash: str) -> Settings:
+    # No background workers: tests drive every stage one step at a time. No pacing
+    # either; the pacer has tests of its own.
+    return Settings(
+        database_url=database_url,
+        passphrase_hash=passphrase_hash,
+        worker=False,
+        profile_path=WISHLIST,
+        asker="fake",
+        arxiv_interval_seconds=0.0,
+    )
+
+
 @pytest.fixture
 def settings(database_url: str) -> Settings:
-    # No background worker: tests drive harvesting one step at a time.
-    return Settings(database_url=database_url, passphrase_hash=PASSPHRASE_HASH, worker=False)
+    return _settings(database_url, PASSPHRASE_HASH)
 
 
 @pytest.fixture
@@ -147,8 +162,7 @@ async def closed(database_url: str) -> AsyncIterator[AsyncClient]:
     The hash is blanked explicitly, so a developer's own .env cannot turn the
     fail-closed case into the configured one.
     """
-    settings = Settings(database_url=database_url, passphrase_hash="", worker=False)
-    async with _serving(create_app(settings)) as http:
+    async with _serving(create_app(_settings(database_url, ""))) as http:
         yield http
 
 
@@ -169,7 +183,8 @@ async def clean_tables(database_url: str) -> AsyncIterator[None]:
     connection = await asyncpg.connect(plain)
     try:
         await connection.execute(
-            "truncate table batch_items, batches, papers restart identity cascade"
+            "truncate table verdicts, judgments, paper_texts, batch_items, batches, papers"
+            " restart identity cascade"
         )
     finally:
         await connection.close()

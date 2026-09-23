@@ -3,7 +3,12 @@ import createClient from "openapi-fetch";
 import type { components, paths } from "./schema";
 
 export type Paper = components["schemas"]["PaperOut"];
+export type Verdict = components["schemas"]["VerdictOut"];
+export type Assessed = components["schemas"]["AssessedOut"];
 export type PaperPage = components["schemas"]["PaperPage"];
+export type Profile = components["schemas"]["ProfileOut"];
+/** The stage an item waits for, or how it ended. The schema keys progress by plain string. */
+export type ItemState = "screen" | "fetch" | "judge" | "done" | "dead";
 export type Health = components["schemas"]["HealthResponse"];
 export type Session = components["schemas"]["SessionStatus"];
 export type BatchRequest = components["schemas"]["BatchRequest"];
@@ -55,13 +60,32 @@ export async function signOut(): Promise<void> {
   if (error) throw new Error("could not sign out");
 }
 
-export async function fetchPapers(limit = 50, offset = 0): Promise<PaperPage> {
+export type Order = "rank" | "newest";
+
+export interface PaperQuery {
+  limit: number;
+  /** Published within this many days; null for every paper. */
+  days: number | null;
+  order: Order;
+}
+
+export async function fetchPapers({ limit, days, order }: PaperQuery): Promise<PaperPage> {
   const { data, error, response } = await api.GET("/papers", {
-    params: { query: { limit, offset } },
+    params: { query: { limit, order, ...(days === null ? {} : { days }) } },
   });
   if (error) {
     if (response.status === 401) throw new Unauthorized();
     throw new Error("could not load papers");
+  }
+  return data;
+}
+
+export async function fetchProfile(): Promise<Profile> {
+  // The route declares no error body, so only the missing data tells of a failure.
+  const { data, response } = await api.GET("/profile");
+  if (data === undefined) {
+    if (response.status === 401) throw new Unauthorized();
+    throw new Error("could not load the wishlist");
   }
   return data;
 }
@@ -85,7 +109,8 @@ const detailOf = (body: unknown): string | null => {
   return null;
 };
 
-export async function submitBatch(request: BatchRequest): Promise<Batch> {
+/** Queue one batch per category the wishlist names. */
+export async function submitBatches(request: BatchRequest): Promise<Batch[]> {
   const { data, error, response } = await api.POST("/batches", {
     body: request,
   });

@@ -1,13 +1,17 @@
 """Reads and writes over the papers table. Functions, not a repository class."""
 
 from collections.abc import Sequence
+from datetime import datetime
+from typing import cast
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, and_, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.types import Page, Paper
+from sift.core.judgments import Verdict, VerdictStage
+from sift.core.types import Assessed, Order, Page, Paper
 from sift.storage.models import Paper as PaperRow
+from sift.storage.models import Verdict as VerdictRow
 
 
 def _to_domain(row: PaperRow) -> Paper:
@@ -21,23 +25,74 @@ def _to_domain(row: PaperRow) -> Paper:
     )
 
 
-async def count_papers(session: AsyncSession) -> int:
-    total = await session.scalar(select(func.count()).select_from(PaperRow))
-    return total or 0
-
-
-async def list_papers(session: AsyncSession, *, limit: int, offset: int) -> Page[Paper]:
-    """Newest first, so an empty database and a fresh batch both read sensibly."""
-    statement = (
-        select(PaperRow)
-        .order_by(PaperRow.published_at.desc(), PaperRow.id.desc())
-        .limit(limit)
-        .offset(offset)
+def _verdict(row: VerdictRow, arxiv_id: str) -> Verdict:
+    return Verdict(
+        document_id=arxiv_id,
+        stage=cast(VerdictStage, row.stage),
+        eligible=row.eligible,
+        total=row.total,
+        merit=row.merit,
+        fit=row.fit,
+        blocked_by=tuple(row.blocked_by),
+        needs_review=row.needs_review,
+        notes=tuple(row.notes),
+        per_criterion=dict(row.per_criterion),
     )
-    rows = (await session.scalars(statement)).all()
+
+
+def _within(
+    statement: Select[tuple[PaperRow, VerdictRow]], since: datetime | None
+) -> Select[tuple[PaperRow, VerdictRow]]:
+    return statement if since is None else statement.where(PaperRow.published_at >= since)
+
+
+async def list_papers(
+    session: AsyncSession,
+    *,
+    profile: str,
+    limit: int,
+    offset: int,
+    since: datetime | None = None,
+    order: Order = "rank",
+) -> Page[Assessed]:
+    """Papers published on or after `since`, each with its verdict under `profile`.
+
+    Ranked: eligible papers first, those read in full ahead of those only
+    screened, then by total; papers not yet screened come last. A screen's total
+    is fit alone and a full verdict's blends in merit, so each is compared only
+    with its own kind. Newest: by publication date alone.
+    """
+    joined = _within(
+        select(PaperRow, VerdictRow).outerjoin(
+            VerdictRow, and_(VerdictRow.paper_id == PaperRow.id, VerdictRow.profile == profile)
+        ),
+        since,
+    )
+    newest = (PaperRow.published_at.desc(), PaperRow.id.desc())
+    ordered = (
+        joined.order_by(*newest)
+        if order == "newest"
+        else joined.order_by(
+            VerdictRow.paper_id.is_(None),
+            VerdictRow.eligible.desc(),
+            (VerdictRow.stage == "full").desc(),
+            VerdictRow.total.desc(),
+            *newest,
+        )
+    )
+    rows = (await session.execute(ordered.limit(limit).offset(offset))).tuples().all()
+    counted = select(func.count()).select_from(PaperRow)
+    if since is not None:
+        counted = counted.where(PaperRow.published_at >= since)
     return Page(
-        items=tuple(_to_domain(row) for row in rows),
-        total=await count_papers(session),
+        items=tuple(
+            Assessed(
+                paper=_to_domain(paper),
+                verdict=None if verdict is None else _verdict(verdict, paper.arxiv_id),
+            )
+            for paper, verdict in rows
+        ),
+        total=await session.scalar(counted) or 0,
         limit=limit,
         offset=offset,
     )

@@ -19,7 +19,7 @@ COPY --from=build /opt/venv /opt/venv
 
 WORKDIR /app
 # Migrations run from this image too, as a one-off task before each deploy.
-COPY alembic.ini ./
+COPY alembic.ini wishlist.toml ./
 COPY migrations ./migrations
 
 ENV PATH=/opt/venv/bin:$PATH \

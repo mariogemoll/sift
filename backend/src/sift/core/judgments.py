@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 Kind = Literal["want", "dealbreaker"]
+VerdictStage = Literal["screen", "full"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,10 +35,16 @@ class Profile:
 
     background: str
     criteria: Sequence[Criterion]
+    name: str = "default"
+    """What verdicts are filed under, so rankings for different wishlists never mix."""
+    categories: tuple[str, ...] = ()
+    """Where the papers come from: the arXiv categories a batch harvests."""
     merit_weight: float = 0.4
     dealbreaker_threshold: float = 0.7
     review_confidence: float = 0.5
     review_margin: float = 0.05
+    screen_threshold: float = 0.5
+    """The least fit, judged from the abstract, that earns a paper a full-text read."""
 
     @property
     def wants(self) -> Sequence[Criterion]:
@@ -84,10 +91,16 @@ class Judgments:
 
 @dataclass(frozen=True, slots=True)
 class Verdict:
+    """Where a document stands against a profile, after one stage of judging.
+
+    `merit` is None for a screen: it is judged from the full text only.
+    """
+
     document_id: str
+    stage: VerdictStage
     eligible: bool
     total: float
-    merit: float
+    merit: float | None
     fit: float
     blocked_by: Sequence[str] = ()
     needs_review: bool = False

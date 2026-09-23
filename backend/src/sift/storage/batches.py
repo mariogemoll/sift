@@ -9,18 +9,19 @@ next claim, and its late writes then match nothing and are refused.
 The caller owns the transaction; nothing here commits.
 """
 
-from collections.abc import Sequence
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import ScalarSelect, func, or_, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sift.core.batches import AfterFailure
-from sift.core.types import Batch, BatchState, Paper
+from sift.core.types import Batch, BatchState, ItemState, Paper, batch_status
 from sift.storage.models import Batch as BatchRow
 from sift.storage.models import BatchItem as BatchItemRow
 from sift.storage.models import Paper as PaperRow
@@ -42,25 +43,33 @@ class Claim:
     attempts: int
 
 
-def _items_count() -> ScalarSelect[int]:
-    return (
-        select(func.count())
-        .where(BatchItemRow.batch_id == BatchRow.id)
-        .correlate(BatchRow)
-        .scalar_subquery()
+async def _progress(
+    session: AsyncSession, batch_ids: Sequence[int]
+) -> Mapping[int, Mapping[ItemState, int]]:
+    """How many items of each batch are in each state; states with none are absent."""
+    counts: defaultdict[int, dict[ItemState, int]] = defaultdict(dict)
+    rows = await session.execute(
+        select(BatchItemRow.batch_id, BatchItemRow.state, func.count())
+        .where(BatchItemRow.batch_id.in_(batch_ids))
+        .group_by(BatchItemRow.batch_id, BatchItemRow.state)
     )
+    for batch_id, state, count in rows.tuples():
+        counts[batch_id][cast(ItemState, state)] = count
+    return counts
 
 
-def _to_domain(row: BatchRow, items: int) -> Batch:
+def _to_domain(row: BatchRow, progress: Mapping[ItemState, int]) -> Batch:
     return Batch(
         id=row.id,
         category=row.category,
         since=row.since,
         until=row.until,
         state=cast(BatchState, row.state),
+        status=batch_status(cast(BatchState, row.state), progress),
         pages=row.pages,
         added=row.added,
-        items=items,
+        items=sum(progress.values()),
+        progress=progress,
         attempts=row.attempts,
         last_error=row.last_error,
         created_at=row.created_at,
@@ -73,24 +82,24 @@ async def create_batch(session: AsyncSession, category: str, since: date, until:
     session.add(row)
     await session.flush()
     await session.refresh(row)
-    return _to_domain(row, items=0)
+    return _to_domain(row, {})
 
 
 async def get_batch(session: AsyncSession, batch_id: int) -> Batch | None:
-    found = (
-        await session.execute(select(BatchRow, _items_count()).where(BatchRow.id == batch_id))
-    ).first()
-    return None if found is None else _to_domain(found[0], found[1])
+    row = await session.get(BatchRow, batch_id, populate_existing=True)
+    if row is None:
+        return None
+    return _to_domain(row, (await _progress(session, [row.id])).get(row.id, {}))
 
 
 async def list_batches(session: AsyncSession, *, limit: int) -> tuple[Batch, ...]:
     """Newest first."""
     statement = (
-        select(BatchRow, _items_count())
-        .order_by(BatchRow.created_at.desc(), BatchRow.id.desc())
-        .limit(limit)
+        select(BatchRow).order_by(BatchRow.created_at.desc(), BatchRow.id.desc()).limit(limit)
     )
-    return tuple(_to_domain(row, items) for row, items in (await session.execute(statement)).all())
+    rows = (await session.scalars(statement)).all()
+    progress = await _progress(session, [row.id for row in rows])
+    return tuple(_to_domain(row, progress.get(row.id, {})) for row in rows)
 
 
 async def claim_batch(session: AsyncSession, lease_for: timedelta) -> Claim | None:

@@ -12,11 +12,16 @@ from .judgments import ChoiceValue, Judgments, ScoreValue
 from .question_types import Question
 
 
-def key_for(state: Mapping[str, str], questions: Mapping[str, Question]) -> str:
-    """Hash all model inputs; weights and thresholds are deliberately absent."""
+def key_for(state: Mapping[str, str], questions: Mapping[str, Question], *, model: str) -> str:
+    """Hash all model inputs; weights and thresholds are deliberately absent.
+
+    The model is an input too: answers from one model are no stand-in for
+    another's, so switching models asks again rather than reading stale answers.
+    """
     payload = json.dumps(
         {
-            "version": 1,
+            "version": 2,
+            "model": model,
             "state": dict(state),
             "questions": {
                 qid: {"type": type(question).__name__, **asdict(question)}

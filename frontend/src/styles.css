@@ -92,13 +92,20 @@ form.batch {
   margin-bottom: 1.75rem;
 }
 
-form.batch label {
+form.batch label,
+form.batch .field {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-form.batch label span {
+form.batch .field code {
+  font-size: 0.88rem;
+  padding: 0.35rem 0;
+}
+
+form.batch label span,
+form.batch .field span {
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -168,56 +175,489 @@ ul.batches .why {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
+.badge.state-processing,
+.badge.state-harvesting {
+  color: var(--fg);
+}
+
 .badge.state-failed,
 .badge.state-retrying {
   color: var(--bad);
   border-color: color-mix(in srgb, var(--bad) 45%, transparent);
 }
 
-table.papers {
-  width: 100%;
-  border-collapse: collapse;
+/* Window and order: two groups of toggles above the list. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1rem;
 }
 
-table.papers th {
-  text-align: left;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 600;
-  padding: 0 0.75rem 0.5rem 0;
-  border-bottom: 1px solid var(--line);
+.choices {
+  display: flex;
+  gap: 0.25rem;
 }
 
-table.papers td {
-  padding: 0.7rem 0.75rem 0.7rem 0;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-}
-
-table.papers a {
-  color: inherit;
-}
-
-td.date,
-td.categories {
-  white-space: nowrap;
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+.choices button {
+  padding: 0.2rem 0.6rem;
   font-size: 0.82rem;
 }
 
-tr.empty td {
+/* The ranked papers: a score on the left, everything else beside it. */
+ol.papers {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li.paper {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 0.9rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+li.paper .score {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.15rem;
+  text-align: right;
+  color: var(--accent);
+}
+
+li.paper .body {
+  min-width: 0;
+}
+
+li.paper .title {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+li.paper .title:hover {
+  text-decoration: underline;
+}
+
+/* Papers the funnel let go of stay visible, only quieter. */
+li.standing-passed-over,
+li.standing-unscreened {
+  opacity: 0.62;
+}
+
+li.standing-blocked .score,
+li.standing-passed-over .score,
+li.standing-unscreened .score {
+  color: var(--muted);
+}
+
+li.paper .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.7rem;
+  margin: 0.3rem 0 0.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+li.paper .categories {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.badge.standing-read {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.badge.standing-blocked,
+li.paper .blocked {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+}
+
+li.paper .review {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+ul.criteria {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0;
+  margin: 0 0 0.3rem;
+  font-size: 0.76rem;
+}
+
+ul.criteria li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: help;
+}
+
+ul.criteria .name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+}
+
+.meter {
+  display: inline-block;
+  width: 3.5rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+li.paper details {
+  font-size: 0.86rem;
+}
+
+li.paper summary {
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+li.paper details p {
+  margin: 0.4rem 0 0;
+}
+
+.empty {
   padding: 3rem 0;
   text-align: center;
   color: var(--muted);
 }
 
-tr.empty span {
+.empty span {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.86rem;
+}
+
+button.more {
+  display: block;
+  margin: 1.25rem auto 0;
+}
+
+/* A batch's papers by stage: one bar, one segment per state, legend beneath.
+   Waiting stages are lighter steps of the accent, finished the full accent. */
+.stagebar {
+  flex-basis: 100%;
+}
+
+.stagebar .segments {
+  display: flex;
+  gap: 2px;
+  height: 0.5rem;
+}
+
+.stagebar .segment {
+  flex-basis: 0;
+  min-width: 3px;
+  border-radius: 2px;
+}
+
+.stage-done {
+  background: var(--accent);
+}
+
+.stage-judge {
+  background: color-mix(in srgb, var(--accent) 60%, var(--bg));
+}
+
+.stage-fetch {
+  background: color-mix(in srgb, var(--accent) 35%, var(--bg));
+}
+
+.stage-screen {
+  background: color-mix(in srgb, var(--accent) 15%, var(--line));
+}
+
+.stage-dead {
+  background: var(--bad);
+}
+
+ul.legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.9rem;
+  padding: 0;
+  margin: 0.3rem 0 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+ul.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+}
+
+nav {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+nav a.here,
+nav a:hover {
+  color: var(--fg);
+}
+
+nav a.here {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+}
+
+.note a {
+  color: inherit;
+}
+
+/* The compact ranking: a row per paper, a small column per criterion. */
+ul.marks-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.mark {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  color: var(--muted);
+}
+
+.standing-read .mark {
+  color: var(--accent);
+}
+
+.standing-blocked .mark {
+  color: var(--bad);
+}
+
+.scroller {
+  overflow-x: auto;
+}
+
+table.ranks {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  table-layout: fixed;
+}
+
+table.ranks th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
+  vertical-align: bottom;
+  padding: 0 0 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+table.ranks th.rank,
+table.ranks td.rank {
+  width: 2.2rem;
+  text-align: right;
+  padding-right: 0.6rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+table.ranks th.total,
+table.ranks td.total {
+  width: 5.5rem;
+  padding-right: 0.75rem;
+}
+
+table.ranks th.criterion {
+  width: 1.6rem;
+  height: 6.5rem;
+  padding: 0 0 0.4rem;
+  cursor: help;
+}
+
+/* Criterion names run upwards, so ten of them fit above narrow columns. */
+table.ranks th.criterion span {
+  display: block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  margin: 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 400;
+}
+
+table.ranks tr.row {
+  cursor: pointer;
+}
+
+table.ranks tr.row:hover td,
+table.ranks tr.open td {
+  background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+}
+
+table.ranks td {
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+table.ranks td.paper {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.75rem;
+}
+
+table.ranks td.paper a {
+  color: inherit;
+  text-decoration: none;
+  margin-left: 0.35rem;
+}
+
+table.ranks td.paper a:hover {
+  text-decoration: underline;
+}
+
+tr.standing-passed-over td.paper a,
+tr.standing-unscreened td.paper a {
+  color: var(--muted);
+}
+
+td.total {
+  white-space: nowrap;
+}
+
+td.total .value {
+  display: inline-block;
+  width: 1.7rem;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+td.total .track {
+  display: inline-block;
+  vertical-align: middle;
+  width: 2.8rem;
+  height: 0.4rem;
+  margin-left: 0.4rem;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+td.total .track span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+tr.standing-passed-over td.total .track span,
+tr.standing-blocked td.total .track span {
+  background: var(--muted);
+}
+
+/* One criterion: a column rising from the floor of its cell. */
+td.cell {
+  position: relative;
+  height: 1.7rem;
+  padding: 0.25rem 0;
+}
+
+td.cell .column {
+  position: absolute;
+  bottom: 0.3rem;
+  left: 50%;
+  width: 0.55rem;
+  max-height: calc(100% - 0.6rem);
+  transform: translateX(-50%);
+  border-radius: 2px 2px 0 0;
+  background: var(--accent);
+}
+
+td.cell .dash {
+  position: absolute;
+  bottom: 0.3rem;
+  left: 50%;
+  width: 0.55rem;
+  height: 1px;
+  transform: translateX(-50%);
+  background: var(--line);
+}
+
+tr.standing-passed-over td.cell .column,
+tr.standing-blocked td.cell .column {
+  background: color-mix(in srgb, var(--accent) 40%, var(--bg));
+}
+
+tr.details td {
+  padding: 0.3rem 0 0.9rem 2.2rem;
+  font-size: 0.84rem;
+  white-space: normal;
+}
+
+tr.details .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.8rem;
+  margin: 0 0 0.3rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+tr.details .blocked {
+  color: var(--bad);
+}
+
+tr.details ul.notes {
+  margin: 0 0 0.4rem;
+  padding-left: 1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+tr.details .abstract {
+  margin: 0;
+  max-width: 48rem;
 }
 
 .bar {
@@ -252,6 +692,11 @@ button.ghost {
 
 button.ghost:hover {
   color: var(--fg);
+}
+
+button.chosen {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.82rem;
 }
 
 /* The login screen: one card, centered, nothing else on the page. */

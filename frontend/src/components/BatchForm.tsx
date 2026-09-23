@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 
-import { Unauthorized, messageOf, submitBatch } from "../api/client";
+import { Unauthorized, messageOf, submitBatches } from "../api/client";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -8,18 +8,19 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
 
 /**
- * Queue a harvest of one arXiv category. The API answers as soon as the batch
- * is queued; a worker does the fetching, and the batch list shows it progress.
+ * Queue a harvest of the wishlist's categories. The API answers as soon as the
+ * batches are queued; workers do the fetching, and the batch list shows it.
  */
 export function BatchForm({
+  categories,
   onDone,
   onEnded,
 }: {
+  categories: readonly string[];
   onDone: () => void;
   onEnded: () => void;
 }) {
   const today = new Date();
-  const [category, setCategory] = useState("cs.IR");
   const [since, setSince] = useState(isoDate(new Date(today.getTime() - 3 * DAY_MS)));
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export function BatchForm({
     setRunning(true);
     setError(null);
     try {
-      await submitBatch({ category: category.trim(), since });
+      await submitBatches({ since });
       onDone();
     } catch (thrown: unknown) {
       if (thrown instanceof Unauthorized) {
@@ -49,16 +50,10 @@ export function BatchForm({
         void submit(event);
       }}
     >
-      <label>
-        <span>Category</span>
-        <input
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          placeholder="cs.IR"
-          spellCheck={false}
-          disabled={running}
-        />
-      </label>
+      <div className="field">
+        <span>Categories</span>
+        <code>{categories.join(" ")}</code>
+      </div>
       <label>
         <span>Since</span>
         <input
@@ -69,7 +64,7 @@ export function BatchForm({
           disabled={running}
         />
       </label>
-      <button type="submit" disabled={running || category.trim() === "" || since === ""}>
+      <button type="submit" disabled={running || since === ""}>
         {running ? "Queueing…" : "Fetch from arXiv"}
       </button>
       {error !== null && <p className="note error">{error}</p>}

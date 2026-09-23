@@ -9,13 +9,15 @@ from sift.core.questions import INJECTED_INSTRUCTIONS, IS_DOCUMENT
 
 from .asker import Ask
 
+MODEL = "fake"
+
 
 def _answer(ask: Ask) -> Judgments:
     nouls: dict[str, float] = {}
     scores: dict[str, ScoreValue] = {}
     choices: dict[str, ChoiceValue] = {}
     for qid, question in ask.asked.items():
-        digest = key_for(ask.state, {qid: question})
+        digest = key_for(ask.state, {qid: question}, model=MODEL)
         fraction = int(digest[:8], 16) / 0xFFFFFFFF
         if isinstance(question, Noul):
             nouls[qid] = (
@@ -40,5 +42,7 @@ def _answer(ask: Ask) -> Judgments:
 class FakeAsker:
     """Repeatable answers independent of batch position, with no API key or I/O."""
 
-    def __call__(self, asks: Sequence[Ask]) -> Sequence[Judgments]:
+    model = MODEL
+
+    async def __call__(self, asks: Sequence[Ask]) -> Sequence[Judgments]:
         return [_answer(ask) for ask in asks]
