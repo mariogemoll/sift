@@ -1,0 +1,121 @@
+name: Deploy
+
+# Deploying is a decision, not a consequence of merging. CI on every push says
+# whether main is deployable; this says to deploy it.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # to exchange the job token for the AWS role
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  CLUSTER: sift
+  SERVICE: sift
+  TASK_FAMILY: sift
+  CONTAINER: api
+
+jobs:
+  deploy:
+    # ARM runner, because the tasks run on Graviton and this avoids emulation.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+
+      - name: Build and push the image
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          IMAGE="$REGISTRY/sift:${GITHUB_SHA}"
+          docker build -t "$IMAGE" backend
+          docker push "$IMAGE"
+          echo "uri=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      # A new revision pointing at the image just pushed. Everything else about
+      # the task — roles, secrets, limits — stays as Terraform defined it.
+      - name: Register a task definition revision
+        id: taskdef
+        run: |
+          aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
+            --query taskDefinition > current.json
+          jq --arg image "${{ steps.image.outputs.uri }}" --arg name "$CONTAINER" '
+            .containerDefinitions |= map(if .name == $name then .image = $image else . end)
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                  .compatibilities, .registeredAt, .registeredBy)
+          ' current.json > next.json
+          arn=$(aws ecs register-task-definition --cli-input-json file://next.json \
+            --query taskDefinition.taskDefinitionArn --output text)
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+
+      # Migrations run before the new code serves traffic, as a one-off task on
+      # the same definition, so they use the same image, roles and secret.
+      - name: Migrate the database
+        run: |
+          network=$(aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration' --output json)
+          subnets=$(jq -r '.subnets | join(",")' <<<"$network")
+          groups=$(jq -r '.securityGroups | join(",")' <<<"$network")
+
+          task=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "${{ steps.taskdef.outputs.arn }}" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$subnets],securityGroups=[$groups],assignPublicIp=ENABLED}" \
+            --overrides '{"containerOverrides":[{"name":"api","command":["alembic","upgrade","head"]}]}' \
+            --query 'tasks[0].taskArn' --output text)
+
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task"
+
+          exit_code=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+
+          if [ "$exit_code" != "0" ]; then
+            echo "::error::migration exited $exit_code"
+            aws logs get-log-events \
+              --log-group-name "/ecs/sift" \
+              --log-stream-name "api/api/${task##*/}" \
+              --query 'events[].message' --output text || true
+            exit 1
+          fi
+
+      - name: Deploy the service
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" \
+            --task-definition "${{ steps.taskdef.outputs.arn }}" >/dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
+
+      # `defaults.run.working-directory` applies to run steps, not to actions,
+      # so the action is told where the frontend's package.json is. The pnpm
+      # version lives there and nowhere else.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Build and publish the site
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+          aws s3 sync dist/ "s3://${{ vars.AWS_SITE_BUCKET }}/" --delete
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.AWS_DISTRIBUTION_ID }}" \
+            --paths '/*' >/dev/null

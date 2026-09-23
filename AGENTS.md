@@ -13,6 +13,7 @@ live in this code, not in a prompt. The shipped adapter reads arXiv preprints.
 ```
 backend/     the Python service — FastAPI, SQLAlchemy, Alembic, the CLI
 frontend/    the React SPA — Vite, TypeScript
+infra/       the AWS stack — Terraform
 openapi.json the contract between them, generated from the backend
 docker-compose.yml
 ```
@@ -136,6 +137,23 @@ a runtime surprise.
 cd backend  && python scripts/export_openapi.py   # FastAPI -> openapi.json
 cd frontend && pnpm run generate                  # openapi.json -> schema.ts
 ```
+
+## Deployment
+
+The stack runs on AWS in `eu-west-2`, described by Terraform in `infra/`:
+CloudFront in front of an S3 bucket for the SPA and an application load
+balancer for `/api/*`, a Fargate service, and RDS Postgres. The prefix split at
+the edge reproduces the dev server's proxy, so the browser is same-origin in
+both places.
+
+Deploying is a separate, manually triggered workflow — CI on every push says
+whether `main` is deployable, `Deploy` says to deploy it. It builds the image,
+registers a task definition revision, runs migrations as a one-off task, rolls
+the service and publishes the site. GitHub Actions authenticates by OIDC; there
+are no AWS keys in the repository.
+
+`infra/README.md` has the runbook: first deployment, wiring up CI, attaching a
+custom domain, and tearing the whole thing down.
 
 ## Checks
 
