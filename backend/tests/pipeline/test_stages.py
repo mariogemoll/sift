@@ -6,7 +6,6 @@ where the item ends up, what it remembers, and what was asked of whom how often.
 """
 
 from dataclasses import dataclass, field, replace
-from datetime import timedelta
 
 import httpx
 from fastapi import FastAPI
@@ -14,23 +13,19 @@ from httpx import AsyncClient
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from arxiv_fake import Entry, FakeArxiv, records
+from arxiv_fake import Entry, FakeArxiv, feed
 from asker_fake import ScriptedAsker
 from clock_fake import FakeClock
 from pdf_fake import pdf
 from sift.core.retry import Retryable, RetryPolicy, Terminal
 from sift.core.types import Stage
 from sift.ingest.pacing import Pacer
-from sift.pipeline.harvest import Pacing, harvest_step
+from sift.pipeline.harvest import harvest_step
 from sift.pipeline.stages import Work, step
 from sift.settings import Settings, downloads
 from sift.storage.engine import session_scope
 from sift.storage.items import advance_item, claim_item
 from sift.storage.models import BatchItem, PaperText, Verdict
-
-EAGER = Pacing(
-    lease=timedelta(minutes=1), between_pages=timedelta(0), idle_poll=timedelta(seconds=0.05)
-)
 
 PROMISING = Entry(id="2609.00001", title="Robot grasping", abstract="We study robotics.")
 DULL = Entry(id="2609.00002", title="Tax law", abstract="A survey of tax codes.")
@@ -80,10 +75,10 @@ def working(
 
 
 async def harvested(app: FastAPI, client: AsyncClient, arxiv: FakeArxiv, *entries: Entry) -> int:
-    arxiv.body = records(*entries)
-    response = await client.post("/batches", json={"since": "2026-09-16"})
+    arxiv.body = feed(*entries)
+    response = await client.post("/batches")
     assert response.status_code == 202
-    assert await harvest_step(app.state.session_factory, app.state.http, app.state.arxiv, EAGER)
+    assert await harvest_step(app.state.harvest)
     batch_id: int = response.json()[0]["id"]
     return batch_id
 

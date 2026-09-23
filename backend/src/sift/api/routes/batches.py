@@ -1,32 +1,24 @@
 """Submitting work and watching it. A worker does the harvesting; these only read and queue."""
 
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
 from sift.api.deps import RankedAgainst, Session
-from sift.api.schemas import BatchOut, BatchRequest
+from sift.api.schemas import BatchOut
 from sift.storage.batches import create_batch, get_batch, list_batches
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED)
-async def submit_batch(
-    request: BatchRequest, session: Session, profile: RankedAgainst
-) -> list[BatchOut]:
-    """Queue one harvest per category the wishlist names, in the wishlist's order.
+async def submit_batches(session: Session, profile: RankedAgainst) -> list[BatchOut]:
+    """Queue one batch per category the wishlist names, in the wishlist's order.
 
-    The window closes today, so each batch means the same thing when it runs.
+    Each fetches its category's latest daily announcement when a worker gets to
+    it; asking twice on one day asks for the same papers, which cost nothing twice.
     """
-    until = datetime.now(UTC).date()
-    if request.since > until:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "since is in the future")
-    batches = [
-        await create_batch(session, category, request.since, until)
-        for category in profile.categories
-    ]
+    batches = [await create_batch(session, category) for category in profile.categories]
     await session.commit()
     return [BatchOut.of(batch) for batch in batches]
 

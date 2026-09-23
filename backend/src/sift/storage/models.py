@@ -41,7 +41,7 @@ class Paper(Base):
 
 
 class Batch(Base):
-    """One harvest of a category over a window, advanced page by page by a worker.
+    """One category's daily announcement, fetched by a worker and then worked through.
 
     A worker owns a batch while `lease_expires_at` is in the future and it holds
     the matching `lease`. A worker that stops renewing loses the batch to the
@@ -52,13 +52,9 @@ class Batch(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     category: Mapped[str] = mapped_column(String(64))
-    since: Mapped[date] = mapped_column(Date)
-    until: Mapped[date] = mapped_column(Date)
     state: Mapped[str] = mapped_column(String(16), default="queued")
-
-    # Where the harvest stands: the token for the next page, or None before the first.
-    resumption_token: Mapped[str | None] = mapped_column(Text, default=None)
-    pages: Mapped[int] = mapped_column(default=0)
+    # The day arXiv announced what the batch holds, once it has been fetched.
+    announced: Mapped[date | None] = mapped_column(Date, default=None)
     added: Mapped[int] = mapped_column(default=0)
 
     attempts: Mapped[int] = mapped_column(default=0)

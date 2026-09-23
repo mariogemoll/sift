@@ -37,17 +37,14 @@ class Settings(BaseSettings):
 
     lease_seconds: float = 120.0
     """How long a worker may hold a batch without recording progress. Must outlast
-    one listing request, HTTP timeout included."""
-
-    page_interval_seconds: float = 3.0
-    """The pause between two listing pages of one batch, to go easy on arXiv."""
+    one announcement request, HTTP timeout included."""
 
     idle_poll_seconds: float = 2.0
     """How often an idle worker looks for work."""
 
     arxiv_interval_seconds: float = 3.0
     """The least gap between the end of one request to arXiv and the start of the
-    next, listing pages and PDFs alike. arXiv asks for three seconds. The pacer
+    next, announcements and PDFs alike. arXiv asks for three seconds. The pacer
     that keeps it is per process, so running several processes divides it."""
 
     profile_path: Path = Path("wishlist.toml")

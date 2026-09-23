@@ -53,20 +53,17 @@ def batch_status(state: BatchState, progress: Mapping[ItemState, int]) -> BatchS
 
 @dataclass(frozen=True, slots=True)
 class Batch:
-    """A harvest of one category over a window, and how far it has got.
+    """One category's daily announcement, and how far its papers have got.
 
+    `announced` is the day arXiv announced the papers, None until fetched.
     `added` counts papers new to the system; `items` counts every paper the batch
-    has seen, and `progress` how many of them wait for or ended in each state.
-    arXiv does not say how many records a window holds in all, so there is no
-    total to count towards: a harvest is done when the last page arrives.
+    holds, and `progress` how many of them wait for or ended in each state.
     """
 
     id: int
     category: str
-    since: date
-    until: date
     state: BatchState
-    pages: int
+    announced: date | None
     added: int
     items: int
     progress: Mapping[ItemState, int]

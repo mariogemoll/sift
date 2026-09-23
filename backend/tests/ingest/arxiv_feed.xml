@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title>cs.MA updates on arXiv.org</title>
+    <link>http://rss.arxiv.org/rss/cs.MA</link>
+    <description>cs.MA updates on the arXiv.org e-print archive.</description>
+    <atom:link href="http://rss.arxiv.org/rss/cs.MA" rel="self" type="application/rss+xml"/>
+    <docs>http://www.rssboard.org/rss-specification</docs>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 23 Sep 2026 04:00:06 +0000</lastBuildDate>
+    <managingEditor>rss-help@arxiv.org</managingEditor>
+    <pubDate>Wed, 23 Sep 2026 00:00:00 -0400</pubDate>
+    <skipDays>
+      <day>Sunday</day>
+      <day>Saturday</day>
+    </skipDays>
+    <item>
+      <title>Indirect tipping: a social attack surface in AI agent populations</title>
+      <link>https://arxiv.org/abs/2609.25194</link>
+      <description>arXiv:2609.25194v1 Announce Type: new 
+Abstract: As generative AI agents are deployed at scale, safety will depend not only on technical safeguards and individual model design, but also on collective equilibria that determine how agent populations process information, prioritize actions, and respond to uncertainty. Yet the same equilibria that enable agents to coordinate also create a social attack surface. The standard framework to assess this vulnerability is critical mass dynamics: the minimum fraction of adversarial agents required to overturn an equilibrium through direct competition. Here, we show that this approach risks underestimating system vulnerability by reducing the problem to the identification of singular tipping points, and ignoring indirect but potentially more efficient routes through which collective behavior can be redirected. Through experiments with populations of LLM agents and an analytic framework that captures their collective dynamics at scale, we map critical-mass thresholds that define a directed, weighted topology over the space of coordination equilibria, and treat this topology as a navigable landscape. We show that indirect tipping through intermediate stepping-stone equilibria can reduce the committed minority required to reach an alternative state, bypass majority requirements, and make possible transitions inaccessible through direct challenges. The diversity of available alternatives and timing of the attack further reshape this landscape, creating opportunities for control as well as risks of unintended destabilization. These results show that an equilibrium's resistance to committed intervention is not an intrinsic property but a structural feature of its competitive relations with alternative states. Securing populations of interacting AI agents therefore requires mapping this social landscape alongside individual agent capabilities and the technical channels through which they interact.</description>
+      <guid isPermaLink="false">oai:arXiv.org:2609.25194v1</guid>
+      <category>cs.MA</category>
+      <category>cs.AI</category>
+      <category>cs.CY</category>
+      <category>cs.SY</category>
+      <category>eess.SY</category>
+      <category>physics.soc-ph</category>
+      <pubDate>Wed, 23 Sep 2026 00:00:00 -0400</pubDate>
+      <arxiv:announce_type>new</arxiv:announce_type>
+      <dc:rights>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</dc:rights>
+      <dc:creator>Ariel Flint, Luca Maria Aiello, Sara M. Constantino, Romualdo Pastor-Satorras, Andrea Baronchelli</dc:creator>
+    </item>
+    <item>
+      <title>Qwen-Audio-Agent Technical Report</title>
+      <link>https://arxiv.org/abs/2609.25195</link>
+      <description>arXiv:2609.25195v1 Announce Type: cross 
+Abstract: We present Qwen-Audio-Agent, a harness that combines full-duplex voice interaction with asynchronous task execution through a foreground-background architecture. A Frontend Agent manages dialogue and selects between direct tool use and delegation, while a Backend Agent carries out delegated tasks in a separate context. An Orchestration Runtime maintains task state, coordinates requests for user input and authorization, and schedules the return of results to the conversation. The runtime separates speech interruption from task cancellation and execution completion from result delivery, allowing conversation to continue while delegated work proceeds. Environmental events and persistent memory provide context within and across sessions. Independent adapters support integration with different frontend models, backend agents, and clients. We instantiate the architecture in desktop assistance, intelligent cockpits, and voice customer service. On an in-house cockpit benchmark of 134 cases, mixed execution achieves a task success rate of 91.04%, compared with 72.39% and 80.60% for the direct and all delegated configurations, respectively. In a separate latency evaluation on matched successful turns, mixed execution reduces mean task execution latency by 26.73% and 30.91% relative to these baselines, respectively. These results support the complementary use of direct tool calls for immediate operations and backend delegation for multi-step tasks.</description>
+      <guid isPermaLink="false">oai:arXiv.org:2609.25195v1</guid>
+      <category>eess.AS</category>
+      <category>cs.MA</category>
+      <pubDate>Wed, 23 Sep 2026 00:00:00 -0400</pubDate>
+      <arxiv:announce_type>cross</arxiv:announce_type>
+      <dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+      <dc:creator>Chong Deng, Yunjie Ji, Yuxiang Kong, Xiangang Li, Xu Li, Binbin Zhang, Haina Zhu, Jianheng Zhuo</dc:creator>
+    </item>
+    <item>
+      <title>Highway Congestion Reduction through Reinforcement Learning Based Eulerian Headway Control</title>
+      <link>https://arxiv.org/abs/2412.02520</link>
+      <description>arXiv:2412.02520v5 Announce Type: replace 
+Abstract: Connected automated vehicles (CAVs) equipped with adaptive cruise control (ACC) create new opportunities for highway congestion mitigation. Traditional practice relies on Eulerian variable speed limits (VSL) which regulate traffic through roadside signs, but suffer from infrequent updates and limited driver compliance. Recent research explored Lagrangian strategies that directly control individual vehicles, offering high reactivity and compliance, yet in realistic multi-lane settings they depend on drivers' latent lane-change intentions, making robust vehicle-level decisions difficult. Hence, we propose an Eulerian control system optimized through reinforcement learning, that (i) leverages ACC for reactivity and compliance, and (ii) obviates dependence on latent driver intentions by regulating aggregate density near bottlenecks, crucially via headway commands rather than speed commands. We evaluate two variants of our system, time-headway and distance-headway control, in large-scale simulations across a range of traffic conditions. Both variants outperform baselines, improving traffic flow by up to 10.6% over human traffic and 6.7% over traditional VSL. To strengthen evaluation, we propose a novel boundary-aware speed metric addressing a recognized flaw in simulation studies with dynamic vehicle entry and exit. The empirical results, together with our emphasis on deployable system design, suggest a path towards practical, safe, and scalable highway congestion mitigation.</description>
+      <guid isPermaLink="false">oai:arXiv.org:2412.02520v5</guid>
+      <category>cs.MA</category>
+      <category>cs.AI</category>
+      <category>cs.LG</category>
+      <category>cs.SY</category>
+      <category>eess.SY</category>
+      <pubDate>Wed, 23 Sep 2026 00:00:00 -0400</pubDate>
+      <arxiv:announce_type>replace</arxiv:announce_type>
+      <dc:rights>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</dc:rights>
+      <dc:creator>Yaron Veksler, Sharon Hornstein, Han Wang, Maria Laura Delle Monache, Daniel Urieli</dc:creator>
+    </item>
+    <item>
+      <title>Steering Noncooperative Games Through Conjecture Design</title>
+      <link>https://arxiv.org/abs/2511.09435</link>
+      <description>arXiv:2511.09435v3 Announce Type: replace-cross 
+Abstract: In dynamic noncooperative games, each player makes conjectures about other players' reactions before choosing a strategy. However, resulting equilibria may be multiple and do not always lead to desirable outcomes. These issues are typically addressed separately, for example, through opponent modelling and incentive design. Drawing inspiration from conjectural variations games, we propose an incentive design framework in which a coordinator first computes an equilibrium by optimizing a predefined objective function, then communicates this equilibrium as a target for the players to reach. In a centralized setting, the coordinator also optimizes the conjectures to steer the players towards the target. In decentralized settings, players independently compute conjectures and update their strategies based on individual targets. We provide a guarantee of equilibrium existence in both cases. This framework uses conjectures not only to guide the system towards desirable outcomes but also to decouple the game into independent optimization problems, enabling efficient computation and parallelization in large-scale settings. We illustrate our theoretical results on classical representative noncooperative games, demonstrating its application potential.</description>
+      <guid isPermaLink="false">oai:arXiv.org:2511.09435v3</guid>
+      <category>cs.GT</category>
+      <category>cs.MA</category>
+      <pubDate>Wed, 23 Sep 2026 00:00:00 -0400</pubDate>
+      <arxiv:announce_type>replace-cross</arxiv:announce_type>
+      <dc:rights>http://creativecommons.org/licenses/by/4.0/</dc:rights>
+      <dc:creator>Francesco Morri, H\'el\`ene Le Cadre, David Salas, Didier Aussel</dc:creator>
+    </item>
+  </channel>
+</rss>

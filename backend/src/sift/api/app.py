@@ -18,7 +18,7 @@ from sift.ingest.pacing import Pacer
 from sift.ingest.pdf import Limits
 from sift.judge import Asker, FakeAsker
 from sift.pipeline import wishlist
-from sift.pipeline.harvest import Pacing, run_worker
+from sift.pipeline.harvest import Harvest, run_harvester
 from sift.pipeline.stages import Work, run_stage
 from sift.settings import Settings, downloads, get_settings
 from sift.storage.engine import create_engine, create_session_factory
@@ -28,14 +28,6 @@ logger = logging.getLogger(__name__)
 
 # arXiv asks API clients to identify themselves.
 USER_AGENT = "sift/0.1"
-
-
-def _pacing(settings: Settings) -> Pacing:
-    return Pacing(
-        lease=timedelta(seconds=settings.lease_seconds),
-        between_pages=timedelta(seconds=settings.page_interval_seconds),
-        idle_poll=timedelta(seconds=settings.idle_poll_seconds),
-    )
 
 
 async def _asker(settings: Settings, stack: AsyncExitStack) -> Asker:
@@ -108,14 +100,19 @@ def create_app(
                 download=downloads(resolved),
             )
             app.state.work = work
+            harvest = Harvest(
+                factory=app.state.session_factory,
+                http=http,
+                arxiv=arxiv,
+                lease=timedelta(seconds=resolved.lease_seconds),
+                policy=RetryPolicy(),
+            )
+            app.state.harvest = harvest
             stop = asyncio.Event()
             idle = timedelta(seconds=resolved.idle_poll_seconds)
             tasks = (
                 [
-                    asyncio.create_task(
-                        run_worker(app.state.session_factory, http, arxiv, _pacing(resolved), stop),
-                        name="harvest worker",
-                    ),
+                    asyncio.create_task(run_harvester(harvest, stop, idle), name="harvest worker"),
                     *(
                         asyncio.create_task(
                             run_stage(work, stage, stop, idle), name=f"{stage} worker {n}"

@@ -11,7 +11,6 @@ export type Profile = components["schemas"]["ProfileOut"];
 export type ItemState = "screen" | "fetch" | "judge" | "done" | "dead";
 export type Health = components["schemas"]["HealthResponse"];
 export type Session = components["schemas"]["SessionStatus"];
-export type BatchRequest = components["schemas"]["BatchRequest"];
 export type Batch = components["schemas"]["BatchOut"];
 
 // Relative, so the dev server's proxy and the deployed origin behave alike.
@@ -90,33 +89,13 @@ export async function fetchProfile(): Promise<Profile> {
   return data;
 }
 
-/**
- * The reason FastAPI gave: a string from the route itself, or the first of the
- * field errors request validation produced.
- */
-const detailOf = (body: unknown): string | null => {
-  if (typeof body !== "object" || body === null || !("detail" in body)) {
-    return null;
-  }
-  const { detail } = body;
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail) && detail.length > 0) {
-    const [first]: unknown[] = detail;
-    if (typeof first === "object" && first !== null && "msg" in first) {
-      return String(first.msg);
-    }
-  }
-  return null;
-};
-
-/** Queue one batch per category the wishlist names. */
-export async function submitBatches(request: BatchRequest): Promise<Batch[]> {
-  const { data, error, response } = await api.POST("/batches", {
-    body: request,
-  });
-  if (error !== undefined || data === undefined) {
+/** Queue one batch per category the wishlist names: each fetches its latest announcement. */
+export async function submitBatches(): Promise<Batch[]> {
+  // The route declares no error body, so only the missing data tells of a failure.
+  const { data, response } = await api.POST("/batches");
+  if (data === undefined) {
     if (response.status === 401) throw new Unauthorized();
-    throw new Error(detailOf(error) ?? `the batch failed (${response.status})`);
+    throw new Error(`queueing failed (${response.status})`);
   }
   return data;
 }

@@ -89,7 +89,8 @@ function Workspace({
   const reload = useCallback(() => setGeneration((value) => value + 1), []);
 
   const active = batches.status === "ready" ? batches.value.filter(isActive) : [];
-  const finished = batches.status === "ready" ? batches.value.length - active.length : 0;
+  // Past is everything no longer running, whether it succeeded or failed.
+  const past = batches.status === "ready" ? batches.value.length - active.length : 0;
   const running = active.length > 0;
   useEffect(() => {
     if (!running) return;
@@ -138,7 +139,7 @@ function Workspace({
 
       {page === "batches" ? (
         <section>
-          <h2>Batches</h2>
+          <h2>All batches</h2>
           {batches.status === "failed" && <p className="note error">{batches.message}</p>}
           {batches.status === "ready" && batches.value.length === 0 && (
             <p className="note">No batches yet.</p>
@@ -151,10 +152,10 @@ function Workspace({
             <BatchForm categories={profile.value.categories} onDone={reload} onEnded={onEnded} />
           )}
           <BatchList batches={active} />
-          {finished > 0 && (
+          {past > 0 && (
             <p className="note">
               <a href="#/batches">
-                {finished} finished batch{finished === 1 ? "" : "es"} →
+                {past} past batch{past === 1 ? "" : "es"} →
               </a>
             </p>
           )}

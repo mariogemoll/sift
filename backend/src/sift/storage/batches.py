@@ -12,15 +12,15 @@ The caller owns the transaction; nothing here commits.
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import ColumnElement, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from sift.core.batches import AfterFailure
+from sift.core.retry import GiveUp, NextStep, RetryIn
 from sift.core.types import Batch, BatchState, ItemState, Paper, batch_status
 from sift.storage.models import Batch as BatchRow
 from sift.storage.models import BatchItem as BatchItemRow
@@ -32,14 +32,11 @@ UNFINISHED: tuple[BatchState, ...] = ("queued", "harvesting")
 
 @dataclass(frozen=True, slots=True)
 class Claim:
-    """What a worker holds while it works on one step of a batch."""
+    """What a worker holds while it fetches one batch's announcement."""
 
     batch_id: int
     lease: UUID
     category: str
-    since: date
-    until: date
-    resumption_token: str | None
     attempts: int
 
 
@@ -59,17 +56,16 @@ async def _progress(
 
 
 def _to_domain(row: BatchRow, progress: Mapping[ItemState, int]) -> Batch:
+    state = cast(BatchState, row.state)
     return Batch(
         id=row.id,
         category=row.category,
-        since=row.since,
-        until=row.until,
-        state=cast(BatchState, row.state),
-        status=batch_status(cast(BatchState, row.state), progress),
-        pages=row.pages,
+        state=state,
+        announced=row.announced,
         added=row.added,
         items=sum(progress.values()),
         progress=progress,
+        status=batch_status(state, progress),
         attempts=row.attempts,
         last_error=row.last_error,
         created_at=row.created_at,
@@ -77,8 +73,8 @@ def _to_domain(row: BatchRow, progress: Mapping[ItemState, int]) -> Batch:
     )
 
 
-async def create_batch(session: AsyncSession, category: str, since: date, until: date) -> Batch:
-    row = BatchRow(category=category, since=since, until=until)
+async def create_batch(session: AsyncSession, category: str) -> Batch:
+    row = BatchRow(category=category)
     session.add(row)
     await session.flush()
     await session.refresh(row)
@@ -125,15 +121,7 @@ async def claim_batch(session: AsyncSession, lease_for: timedelta) -> Claim | No
         .where(BatchRow.id == row.id)
         .values(state="harvesting", lease=lease, lease_expires_at=now + lease_for)
     )
-    return Claim(
-        batch_id=row.id,
-        lease=lease,
-        category=row.category,
-        since=row.since,
-        until=row.until,
-        resumption_token=row.resumption_token,
-        attempts=row.attempts,
-    )
+    return Claim(batch_id=row.id, lease=lease, category=row.category, attempts=row.attempts)
 
 
 async def _add_items(session: AsyncSession, batch_id: int, papers: Sequence[Paper]) -> None:
@@ -147,34 +135,24 @@ async def _add_items(session: AsyncSession, batch_id: int, papers: Sequence[Pape
     await session.execute(insert(BatchItemRow).values(rows).on_conflict_do_nothing())
 
 
-async def record_page(
-    session: AsyncSession,
-    claim: Claim,
-    *,
-    papers: Sequence[Paper],
-    resumption_token: str | None,
-    next_page_after: timedelta,
+async def record_announcement(
+    session: AsyncSession, claim: Claim, *, announced: date, papers: Sequence[Paper]
 ) -> bool:
-    """Store one harvested page and release the batch. False, writing nothing, if the lease is gone.
-
-    With no further token the batch is done. Otherwise it waits `next_page_after`
-    before anyone may claim it for the next page, which is what paces the harvest.
-    """
+    """Store the announcement's papers as the batch's items and finish the harvest.
+    False, writing nothing, if the lease is gone."""
     now = func.now()
-    finished = resumption_token is None
     guarded = (
         update(BatchRow)
         .where(BatchRow.id == claim.batch_id, BatchRow.lease == claim.lease)
         .values(
-            state="done" if finished else "harvesting",
-            resumption_token=resumption_token,
-            pages=BatchRow.pages + 1,
+            state="done",
+            announced=announced,
             attempts=0,
             last_error=None,
-            not_before=None if finished else now + next_page_after,
+            not_before=None,
             lease=None,
             lease_expires_at=None,
-            finished_at=now if finished else None,
+            finished_at=now,
         )
         .returning(BatchRow.id)
     )
@@ -182,29 +160,32 @@ async def record_page(
         return False
     added = await add_papers(session, papers)
     await _add_items(session, claim.batch_id, papers)
-    await session.execute(
-        update(BatchRow).where(BatchRow.id == claim.batch_id).values(added=BatchRow.added + added)
-    )
+    await session.execute(update(BatchRow).where(BatchRow.id == claim.batch_id).values(added=added))
     return True
 
 
-async def record_failure(
-    session: AsyncSession, claim: Claim, error: str, outcome: AfterFailure
-) -> bool:
-    """Note a failed step and release the batch, per `outcome`. False if the lease was lost."""
-    now = func.now()
-    failed = outcome.state == "failed"
+async def record_failure(session: AsyncSession, claim: Claim, error: str, step: NextStep) -> bool:
+    """Note a failed fetch and release the batch: due again after the delay, or
+    failed with the reason kept. False if the lease was lost."""
+    not_before: ColumnElement[datetime] | None
+    finished_at: ColumnElement[datetime] | None
+    match step:
+        case RetryIn(delay):
+            state: BatchState = "harvesting"
+            not_before, finished_at, last_error = func.now() + timedelta(seconds=delay), None, error
+        case GiveUp(reason):
+            state, not_before, finished_at, last_error = "failed", None, func.now(), reason
     guarded = (
         update(BatchRow)
         .where(BatchRow.id == claim.batch_id, BatchRow.lease == claim.lease)
         .values(
-            state=outcome.state,
+            state=state,
             attempts=BatchRow.attempts + 1,
-            last_error=error,
-            not_before=None if failed else now + outcome.delay,
+            last_error=last_error,
+            not_before=not_before,
             lease=None,
             lease_expires_at=None,
-            finished_at=now if failed else None,
+            finished_at=finished_at,
         )
         .returning(BatchRow.id)
     )

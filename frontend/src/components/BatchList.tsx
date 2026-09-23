@@ -23,11 +23,14 @@ const count = (batch: Batch, state: ItemState): number => batch.progress[state] 
 export const isActive = (batch: Batch): boolean =>
   batch.status === "queued" || batch.status === "harvesting" || batch.status === "processing";
 
-/** How far the harvest has got. arXiv gives no total, so there is none to show. */
-const harvest = (batch: Batch): string => {
-  const pages = `${batch.pages} page${batch.pages === 1 ? "" : "s"}`;
-  return `${pages} · ${batch.items} papers · ${batch.added} new`;
-};
+const day = (iso: string): string =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+/** What the announcement held, once it has been fetched. */
+const harvest = (batch: Batch): string =>
+  batch.announced === null
+    ? "not fetched yet"
+    : `announced ${day(batch.announced)} · ${batch.items} papers · ${batch.added} new`;
 
 const retrying = (batch: Batch): boolean => batch.state === "harvesting" && batch.attempts > 0;
 
@@ -67,9 +70,7 @@ export function BatchList({ batches }: { batches: readonly Batch[] }) {
           <span className={`badge state-${retrying(batch) ? "retrying" : batch.status}`}>
             {retrying(batch) ? `retrying · attempt ${batch.attempts + 1}` : batch.status}
           </span>
-          <span className="what">
-            {batch.category} since {batch.since}
-          </span>
+          <span className="what">{batch.category}</span>
           <span className="progress">{harvest(batch)}</span>
           <span className="when">{time(batch.created_at)}</span>
           {batch.items > 0 && <StageBar batch={batch} />}

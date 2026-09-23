@@ -151,29 +151,21 @@ class ProfileOut(BaseModel):
         )
 
 
-class BatchRequest(BaseModel):
-    """Which papers to pull in: those new or revised on or after a date, in every
-    category the wishlist names."""
-
-    since: date
-
-
 class BatchOut(BaseModel):
-    """A batch and how far it has got.
+    """One category's daily announcement, and how far its papers have got.
 
+    `announced` is the day arXiv announced the papers, null until fetched.
     `added` counts papers new to the system; `items` counts every paper the batch
-    has seen, and `progress` how many wait for each stage or ended in `done` or
-    `dead`. `state` is the harvest's alone; `status` is the batch's as a whole,
+    holds, and `progress` how many wait for each stage or ended in `done` or
+    `dead`. `state` is the fetch's alone; `status` is the batch's as a whole,
     `processing` while its papers are still between stages. `attempts` and
-    `last_error` describe harvest failures since the last page that succeeded.
+    `last_error` describe failed fetches.
     """
 
     id: int
     category: str
-    since: date
-    until: date
     state: BatchState
-    pages: int
+    announced: date | None
     added: int
     items: int
     progress: dict[ItemState, int]
@@ -188,10 +180,8 @@ class BatchOut(BaseModel):
         return BatchOut(
             id=batch.id,
             category=batch.category,
-            since=batch.since,
-            until=batch.until,
             state=batch.state,
-            pages=batch.pages,
+            announced=batch.announced,
             added=batch.added,
             items=batch.items,
             progress=dict(batch.progress),

@@ -1,5 +1,4 @@
 from dataclasses import replace
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -11,8 +10,8 @@ from sift.core.profile import ProfileError
 from sift.pipeline import wishlist
 
 
-async def submit(client: AsyncClient, since: str = "2026-09-16") -> list[dict[str, object]]:
-    response = await client.post("/batches", json={"since": since})
+async def submit(client: AsyncClient) -> list[dict[str, object]]:
+    response = await client.post("/batches")
     assert response.status_code == 202
     body: list[dict[str, object]] = response.json()
     return body
@@ -23,9 +22,8 @@ async def test_submitting_queues_a_batch_without_asking_arxiv(
 ) -> None:
     (body,) = await submit(client)
 
-    assert (body["category"], body["since"], body["state"]) == ("cs.RO", "2026-09-16", "queued")
-    assert body["until"] == datetime.now(UTC).date().isoformat()
-    assert (body["pages"], body["items"], body["attempts"]) == (0, 0, 0)
+    assert (body["category"], body["state"], body["status"]) == ("cs.RO", "queued", "queued")
+    assert (body["announced"], body["items"], body["attempts"]) == (None, 0, 0)
     assert body["progress"] == {}
     assert arxiv.requests == []
 
@@ -50,14 +48,8 @@ async def test_an_unknown_batch_is_not_found(client: AsyncClient) -> None:
     assert (await client.get("/batches/12345")).status_code == 404
 
 
-async def test_a_window_starting_tomorrow_is_rejected(client: AsyncClient) -> None:
-    tomorrow = (datetime.now(UTC) + timedelta(days=1)).date().isoformat()
-    response = await client.post("/batches", json={"since": tomorrow})
-    assert response.status_code == 422
-
-
 async def test_batches_need_a_session(anonymous: AsyncClient) -> None:
-    submitted = await anonymous.post("/batches", json={"since": "2026-09-16"})
+    submitted = await anonymous.post("/batches")
     assert submitted.status_code == 401
     assert (await anonymous.get("/batches")).status_code == 401
 

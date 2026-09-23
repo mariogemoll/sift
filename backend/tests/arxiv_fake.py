@@ -1,4 +1,4 @@
-"""A stand-in for arXiv's OAI-PMH interface, and responses shaped like the ones it returns."""
+"""A stand-in for arXiv's announcement feeds, and feeds shaped like the ones it serves."""
 
 from dataclasses import dataclass, field
 from html import escape
@@ -8,73 +8,61 @@ import httpx
 
 @dataclass
 class FakeArxiv:
-    """Answers with `status` and `body`, and remembers what it was asked.
+    """Answers every feed request with `status` and `body`, and remembers what it was asked.
 
-    A request carrying a resumption token is answered from `pages` instead, so a
-    test can lay out a listing that runs over several pages.
+    A response left in `queued` is used once, before `status` and `body`, so a
+    test can lay out failures followed by a success.
     """
 
     status: int = 200
     body: str = ""
-    pages: dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
+    queued: list[httpx.Response] = field(default_factory=list)
     requests: list[httpx.Request] = field(default_factory=list)
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
-        token = request.url.params.get("resumptionToken")
-        if self.status != 200 or token is None:
-            return httpx.Response(self.status, text=self.body)
-        return httpx.Response(200, text=self.pages[token])
+        if self.queued:
+            return self.queued.pop(0)
+        return httpx.Response(self.status, text=self.body, headers=self.headers)
 
 
 @dataclass(frozen=True)
 class Entry:
-    """One paper as arXiv's metadata format describes it."""
+    """One paper as an announcement feed describes it."""
 
     id: str = "2609.26780"
+    version: int = 1
     title: str = "A Paper"
     abstract: str = "What it is about."
-    authors: tuple[tuple[str, str], ...] = (("Author", "A."),)
-    categories: str = "cs.IR"
-    created: str = "2026-09-22"
+    authors: tuple[str, ...] = ("A. Author",)
+    categories: tuple[str, ...] = ("cs.IR",)
+    kind: str = "new"
 
 
-_ENVELOPE = (
-    '<?xml version="1.0" encoding="UTF-8"?>'
-    '<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">'
-    "<responseDate>2026-09-23T00:00:00Z</responseDate>{}</OAI-PMH>"
-)
+ANNOUNCED = "Wed, 23 Sep 2026 00:00:00 -0400"
 
 
-def _record(entry: Entry) -> str:
-    authors = "".join(
-        f"<author><keyname>{escape(keyname)}</keyname>"
-        f"<forenames>{escape(forenames)}</forenames></author>"
-        for keyname, forenames in entry.authors
-    )
+def _item(entry: Entry) -> str:
+    categories = "".join(f"<category>{escape(c)}</category>" for c in entry.categories)
     return (
-        f"<record><header><identifier>oai:arXiv.org:{entry.id}</identifier></header>"
-        '<metadata><arXiv xmlns="http://arxiv.org/OAI/arXiv/">'
-        f"<id>{entry.id}</id><created>{entry.created}</created><authors>{authors}</authors>"
-        f"<title>{escape(entry.title)}</title><categories>{entry.categories}</categories>"
-        f"<abstract>{escape(entry.abstract)}</abstract></arXiv></metadata></record>"
+        f"<item><title>{escape(entry.title)}</title>"
+        f"<link>https://arxiv.org/abs/{entry.id}</link>"
+        f"<description>arXiv:{entry.id}v{entry.version} Announce Type: {entry.kind} \n"
+        f"Abstract: {escape(entry.abstract)}</description>"
+        f'<guid isPermaLink="false">oai:arXiv.org:{entry.id}v{entry.version}</guid>'
+        f"{categories}<pubDate>{ANNOUNCED}</pubDate>"
+        f"<arxiv:announce_type>{entry.kind}</arxiv:announce_type>"
+        f"<dc:creator>{escape(', '.join(entry.authors))}</dc:creator></item>"
     )
 
 
-def records(*entries: Entry, token: str | None = None) -> str:
-    """A ListRecords page. With `token`, it carries a resumption token; an empty one ends the list.
-
-    arXiv puts the size of the page in hand into `completeListSize`, so the fake does too.
-    """
-    resumption = (
-        f'<resumptionToken completeListSize="{len(entries)}" cursor="0">{token}</resumptionToken>'
-        if token is not None
-        else ""
+def feed(*entries: Entry, announced: str = ANNOUNCED) -> str:
+    """One category's announcement feed."""
+    return (
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        '<rss xmlns:arxiv="http://arxiv.org/schemas/atom" '
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0"><channel>'
+        f"<title>updates on arXiv.org</title><pubDate>{announced}</pubDate>"
+        f"{''.join(_item(entry) for entry in entries)}</channel></rss>"
     )
-    return _ENVELOPE.format(
-        f"<ListRecords>{''.join(_record(entry) for entry in entries)}{resumption}</ListRecords>"
-    )
-
-
-def oai_error(code: str, reason: str) -> str:
-    return _ENVELOPE.format(f'<error code="{code}">{escape(reason)}</error>')

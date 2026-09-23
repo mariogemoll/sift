@@ -40,12 +40,13 @@ export interface paths {
         get: operations["get_batches_batches_get"];
         put?: never;
         /**
-         * Submit Batch
-         * @description Queue one harvest per category the wishlist names, in the wishlist's order.
+         * Submit Batches
+         * @description Queue one batch per category the wishlist names, in the wishlist's order.
          *
-         *     The window closes today, so each batch means the same thing when it runs.
+         *     Each fetches its category's latest daily announcement when a worker gets to
+         *     it; asking twice on one day asks for the same papers, which cost nothing twice.
          */
-        post: operations["submit_batch_batches_post"];
+        post: operations["submit_batches_batches_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -137,17 +138,20 @@ export interface components {
         };
         /**
          * BatchOut
-         * @description A batch and how far it has got.
+         * @description One category's daily announcement, and how far its papers have got.
          *
+         *     `announced` is the day arXiv announced the papers, null until fetched.
          *     `added` counts papers new to the system; `items` counts every paper the batch
-         *     has seen, and `progress` how many wait for each stage or ended in `done` or
-         *     `dead`. `state` is the harvest's alone; `status` is the batch's as a whole,
+         *     holds, and `progress` how many wait for each stage or ended in `done` or
+         *     `dead`. `state` is the fetch's alone; `status` is the batch's as a whole,
          *     `processing` while its papers are still between stages. `attempts` and
-         *     `last_error` describe harvest failures since the last page that succeeded.
+         *     `last_error` describe failed fetches.
          */
         BatchOut: {
             /** Added */
             added: number;
+            /** Announced */
+            announced: string | null;
             /** Attempts */
             attempts: number;
             /** Category */
@@ -165,17 +169,10 @@ export interface components {
             items: number;
             /** Last Error */
             last_error: string | null;
-            /** Pages */
-            pages: number;
             /** Progress */
             progress: {
                 [key: string]: number;
             };
-            /**
-             * Since
-             * Format: date
-             */
-            since: string;
             /**
              * State
              * @enum {string}
@@ -186,23 +183,6 @@ export interface components {
              * @enum {string}
              */
             status: "queued" | "harvesting" | "processing" | "done" | "failed";
-            /**
-             * Until
-             * Format: date
-             */
-            until: string;
-        };
-        /**
-         * BatchRequest
-         * @description Which papers to pull in: those new or revised on or after a date, in every
-         *     category the wishlist names.
-         */
-        BatchRequest: {
-            /**
-             * Since
-             * Format: date
-             */
-            since: string;
         };
         /** CriterionOut */
         CriterionOut: {
@@ -464,18 +444,14 @@ export interface operations {
             };
         };
     };
-    submit_batch_batches_post: {
+    submit_batches_batches_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             202: {
@@ -484,15 +460,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BatchOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

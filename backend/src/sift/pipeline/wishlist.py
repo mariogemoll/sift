@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sift.core.judgments import Profile
 from sift.core.profile import ProfileError, parse_toml
-from sift.ingest.listing import valid_category
+from sift.ingest.announcements import valid_category
 
 
 def load(path: Path) -> Profile:

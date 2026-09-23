@@ -134,41 +134,53 @@ arXiv for the paper itself rather than showing it.
 
 ## Listing papers
 
-Metadata comes from arXiv's OAI-PMH interface (`oaipmh.arxiv.org/oai`), not the
-search API at `export.arxiv.org/api/query`. The search API answers 406 to Python
-HTTP clients — any TLS handshake from Python's OpenSSL that offers ALPN, which
-httpx always does, HTTP/2 included — while curl and `urllib` get through. That
-is arXiv's filtering, not a bug to work around by disguising the client, and
-OAI-PMH is arXiv's recommended channel for bulk metadata anyway.
+New papers come from arXiv's daily announcement of each category, as its RSS
+feed (`rss.arxiv.org/rss/<category>`): the papers new to the category that day
+and those cross-listed into it, with titles, authors and abstracts. Replacements
+of older papers are in the feed too and are skipped. One request per category;
+a day without an announcement is an empty one, not an error; an unknown category
+is a 400 and terminal.
 
-Two consequences. A window selects records by datestamp, the day a record last
-changed, so it catches revised papers as well as new ones. And a response is one
-page with a resumption token when more match. There is no reliable total:
-`completeListSize` turns out to be the size of the page in hand, so a batch
-reports pages and papers so far, and is done when a page arrives without a token.
+Two other routes were tried and do not work from where the service runs, which
+is worth knowing before reaching for them again:
+
+- The search API (`export.arxiv.org/api/query`) answers 406 to Python HTTP
+  clients — any TLS handshake from Python's OpenSSL that offers ALPN, which
+  httpx always does — while curl and `urllib` get through.
+- OAI-PMH (`oaipmh.arxiv.org/oai`) can list any window of days, but from AWS its
+  CDN answers large `ListRecords` requests with an empty 406 in milliseconds —
+  cs.AI and cs.CL every time, fresh addresses and long pauses included — while
+  the same requests succeed from elsewhere.
+
+That is arXiv's filtering, not a bug to work around by disguising the client.
+The feed covers what this service is for: the papers announced today.
 
 ## Batches and workers
 
-`POST /batches` only queues. Workers harvest, and every API process runs one
-(`SIFT_WORKER=false` turns it off). They coordinate through the `batches` table
-alone, with no queue in between:
+`POST /batches` only queues: one batch per wishlist category, each to fetch that
+category's latest announcement. Workers do the fetching, and every API process
+runs one (`SIFT_WORKER=false` turns it off). They coordinate through the
+`batches` table alone, with no queue in between:
 
 - A step claims the oldest due batch with `SELECT … FOR UPDATE SKIP LOCKED`, so
   concurrent workers never take the same one, and stamps it with a lease: a
   fresh UUID and an expiry.
-- It fetches one listing page with no transaction open, then records the page —
-  papers, items, the next resumption token — in one transaction guarded by the
-  lease UUID, and releases the batch with `not_before` set one page interval
-  ahead. That interval is what paces a harvest.
+- It fetches the feed with no transaction open, taking a turn from the arXiv
+  pacer, then records the papers and one item per paper in one transaction
+  guarded by the lease UUID.
 - A worker that dies or hangs simply stops renewing. Once its lease expires the
-  next claim takes the batch and resumes from the last recorded token; the dead
-  worker's late writes no longer match the lease and are refused.
-- Failures are counted per batch: retryable ones back off and try again, a
-  request arXiv rejects fails the batch at once.
+  next claim asks again; the dead worker's late writes no longer match the lease
+  and are refused.
+- Failures are sorted and retried like every other request to arXiv
+  (`ingest/failures.py`, `core/retry.py`): a refused request fails the batch at
+  once, server trouble backs off with jitter, never sooner than a Retry-After,
+  until the attempts run out.
 
-At-least-once per page, idempotent writes (papers on arXiv id, items on batch
-and paper), no lost work. SQS or similar becomes worth it when the database
-stops being a comfortable place to poll — not at this scale.
+At-least-once per batch, idempotent writes (papers on arXiv id, items on batch
+and paper), no lost work. Asking for the same announcement twice costs nothing:
+the papers exist, and every stage after is deduplicated. SQS or similar becomes
+worth it when the database stops being a comfortable place to poll — not at
+this scale.
 
 ## The funnel
 
@@ -215,7 +227,7 @@ handle one way the network can misbehave:
 - `ingest/pacing.py` — a `Pacer` per host hands out one turn at a time, starting
   no sooner than the interval after the previous turn ended. A Retry-After holds
   the whole pacer, not just the request that was refused. One pacer serves both
-  the listing and the PDFs, since both go to arXiv. It is per process: several
+  the announcements and the PDFs, since both go to arXiv. It is per process: several
   processes divide `SIFT_ARXIV_INTERVAL_SECONDS` between them.
 - `ingest/extract.py` — pypdf's text is cleaned before anything stores it:
   surrogate pairs it splits are rejoined, lone ones replaced, NUL dropped.

@@ -26,11 +26,23 @@
         "type": "object"
       },
       "BatchOut": {
-        "description": "A batch and how far it has got.\n\n`added` counts papers new to the system; `items` counts every paper the batch\nhas seen, and `progress` how many wait for each stage or ended in `done` or\n`dead`. `state` is the harvest's alone; `status` is the batch's as a whole,\n`processing` while its papers are still between stages. `attempts` and\n`last_error` describe harvest failures since the last page that succeeded.",
+        "description": "One category's daily announcement, and how far its papers have got.\n\n`announced` is the day arXiv announced the papers, null until fetched.\n`added` counts papers new to the system; `items` counts every paper the batch\nholds, and `progress` how many wait for each stage or ended in `done` or\n`dead`. `state` is the fetch's alone; `status` is the batch's as a whole,\n`processing` while its papers are still between stages. `attempts` and\n`last_error` describe failed fetches.",
         "properties": {
           "added": {
             "title": "Added",
             "type": "integer"
+          },
+          "announced": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Announced"
           },
           "attempts": {
             "title": "Attempts",
@@ -76,10 +88,6 @@
             ],
             "title": "Last Error"
           },
-          "pages": {
-            "title": "Pages",
-            "type": "integer"
-          },
           "progress": {
             "additionalProperties": {
               "type": "integer"
@@ -95,11 +103,6 @@
             },
             "title": "Progress",
             "type": "object"
-          },
-          "since": {
-            "format": "date",
-            "title": "Since",
-            "type": "string"
           },
           "state": {
             "enum": [
@@ -121,20 +124,13 @@
             ],
             "title": "Status",
             "type": "string"
-          },
-          "until": {
-            "format": "date",
-            "title": "Until",
-            "type": "string"
           }
         },
         "required": [
           "id",
           "category",
-          "since",
-          "until",
           "state",
-          "pages",
+          "announced",
           "added",
           "items",
           "progress",
@@ -145,21 +141,6 @@
           "finished_at"
         ],
         "title": "BatchOut",
-        "type": "object"
-      },
-      "BatchRequest": {
-        "description": "Which papers to pull in: those new or revised on or after a date, in every\ncategory the wishlist names.",
-        "properties": {
-          "since": {
-            "format": "date",
-            "title": "Since",
-            "type": "string"
-          }
-        },
-        "required": [
-          "since"
-        ],
-        "title": "BatchRequest",
         "type": "object"
       },
       "CriterionOut": {
@@ -639,18 +620,8 @@
         ]
       },
       "post": {
-        "description": "Queue one harvest per category the wishlist names, in the wishlist's order.\n\nThe window closes today, so each batch means the same thing when it runs.",
-        "operationId": "submit_batch_batches_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BatchRequest"
-              }
-            }
-          },
-          "required": true
-        },
+        "description": "Queue one batch per category the wishlist names, in the wishlist's order.\n\nEach fetches its category's latest daily announcement when a worker gets to\nit; asking twice on one day asks for the same papers, which cost nothing twice.",
+        "operationId": "submit_batches_batches_post",
         "responses": {
           "202": {
             "content": {
@@ -659,25 +630,15 @@
                   "items": {
                     "$ref": "#/components/schemas/BatchOut"
                   },
-                  "title": "Response Submit Batch Batches Post",
+                  "title": "Response Submit Batches Batches Post",
                   "type": "array"
                 }
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
-        "summary": "Submit Batch",
+        "summary": "Submit Batches",
         "tags": [
           "batches"
         ]
