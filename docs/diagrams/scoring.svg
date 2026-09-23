@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="sd" viewBox="0 0 900 356" role="img" aria-labelledby="score-title score-desc">
+<title id="score-title">How a paper gets its score</title>
+<desc id="score-desc">The model answers questions: a 0 to 3 score per interest, merit, a probability per dealbreaker, and integrity checks. Code turns them into a weighted fit, a total of 0.4 merit plus 0.6 fit, a gate that blocks on any dealbreaker above 0.7, and a needs-review flag. These make the verdict, which decides the screen and the ranking.</desc>
+<style>
+svg.sd{--bg:#FFFFFF;--band:#EEF2F4;--ink:#18222C;--muted:#5B6875;--line:#B9C3CC;--core:#2E6A86;--core-fill:#E1EEF4;--branch:#8C5B22;--branch-fill:#F6EBDD;--conv:#6B4A86;--conv-fill:#EEE7F4;--ban:#B23A3A;--ban-fill:#F8E4E2;--ext-fill:#E9EDF0;font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){svg.sd{--bg:#1A2229;--band:#222C35;--ink:#E3E9EE;--muted:#93A1AE;--line:#3E4B56;--core:#7FB9D4;--core-fill:#1C3340;--branch:#D9A566;--branch-fill:#3A2C1B;--conv:#B89AD2;--conv-fill:#2F2540;--ban:#E27A7A;--ban-fill:#3D2224;--ext-fill:#26313A}}
+.sd .bg{fill:var(--bg)}
+.sd text{fill:var(--ink);font-size:13px}
+.sd .name{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:14px}
+.sd .sub{fill:var(--muted);font-size:12px}
+.sd .dep{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.sd .tier{font-size:11px;letter-spacing:.1em;font-weight:600}
+.sd .phase{font-size:12px;font-weight:600}
+.sd .lbl{fill:var(--muted);font-size:11.5px}
+.sd .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+.sd .ret{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.sd .life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+.sd .band{fill:var(--band)}
+.sd .ext{fill:var(--ext-fill);stroke:var(--line);stroke-width:1.2}
+.sd .box{fill:var(--bg);stroke:var(--ink);stroke-width:1.2}
+.sd .aws{fill:none;stroke:var(--line);stroke-dasharray:5 4;stroke-width:1.4}
+.sd .core{fill:var(--core-fill);stroke:var(--core);stroke-width:1.5}
+.sd .branch{fill:var(--branch-fill);stroke:var(--branch);stroke-width:1.5}
+.sd .conv{fill:var(--conv-fill);stroke:var(--conv);stroke-width:1.5}
+.sd .gate{fill:var(--ban-fill);stroke:var(--ban);stroke-width:1.5}
+.sd .stall{fill:none;stroke:var(--conv);stroke-width:1.2;stroke-dasharray:4 3}
+.sd .t-core{fill:var(--core)}
+.sd .t-branch{fill:var(--branch)}
+.sd .t-conv{fill:var(--conv)}
+.sd .t-ban{fill:var(--ban)}
+.sd .ban{stroke:var(--ban);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.sd .ban-x{stroke:var(--ban);stroke-width:2}
+.sd .dot{fill:var(--ink)}
+.sd .head{fill:var(--muted)}
+.sd .head-ban{fill:var(--ban)}
+.sd .ban-edge{stroke:var(--ban);stroke-width:1.4;fill:none}
+.sd .halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+</style>
+<defs><marker id="score-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker></defs>
+<rect class="bg" width="900" height="356" rx="8"/>
+
+<text class="tier" x="20" y="26" style="fill:var(--muted)">ASKED OF THE MODEL</text>
+<text class="tier t-core" x="300" y="26">DECIDED IN CODE · judging/scoring.py</text>
+<text class="tier" x="630" y="26" style="fill:var(--muted)">RESULT</text>
+
+<rect class="ext" x="20" y="40" width="210" height="56" rx="5"/>
+<text class="name" x="125" y="64" text-anchor="middle">wants</text>
+<text class="sub" x="125" y="83" text-anchor="middle">0–3 for each of 9 interests</text>
+<rect class="ext" x="20" y="120" width="210" height="56" rx="5"/>
+<text class="name" x="125" y="144" text-anchor="middle">merit</text>
+<text class="sub" x="125" y="163" text-anchor="middle">0–3 · full text only</text>
+<rect class="ext" x="20" y="200" width="210" height="56" rx="5"/>
+<text class="name" x="125" y="224" text-anchor="middle">dealbreakers</text>
+<text class="sub" x="125" y="243" text-anchor="middle">P(yes) for each condition</text>
+<rect class="ext" x="20" y="280" width="210" height="56" rx="5"/>
+<text class="name" x="125" y="304" text-anchor="middle">integrity</text>
+<text class="sub" x="125" y="323" text-anchor="middle">a real paper? injected prompts?</text>
+
+<rect class="core" x="300" y="40" width="250" height="56" rx="5"/>
+<text class="name" x="425" y="64" text-anchor="middle">fit</text>
+<text class="sub" x="425" y="83" text-anchor="middle">weighted mean · weights 2, 1.5, 1</text>
+<rect class="core" x="300" y="120" width="250" height="56" rx="5"/>
+<text class="name" x="425" y="144" text-anchor="middle">total</text>
+<text class="sub" x="425" y="163" text-anchor="middle">0.4 × merit + 0.6 × fit</text>
+<rect class="gate" x="300" y="200" width="250" height="56" rx="5"/>
+<text class="name t-ban" x="425" y="224" text-anchor="middle">gate</text>
+<text class="sub" x="425" y="243" text-anchor="middle">blocked if any P(yes) &gt; 0.7</text>
+<rect class="core" x="300" y="280" width="250" height="56" rx="5"/>
+<text class="name" x="425" y="304" text-anchor="middle">needs review</text>
+<text class="sub" x="425" y="323" text-anchor="middle">low confidence, near a threshold</text>
+
+<rect class="core" x="630" y="40" width="250" height="56" rx="5"/>
+<text class="name" x="755" y="64" text-anchor="middle">passes the screen</text>
+<text class="sub" x="755" y="83" text-anchor="middle">not blocked and fit ≥ 0.5</text>
+<rect class="box" x="630" y="120" width="250" height="106" rx="5"/>
+<text class="name" x="755" y="146" text-anchor="middle">verdict</text>
+<text class="sub" x="755" y="168" text-anchor="middle">eligible · total · merit · fit</text>
+<text class="sub" x="755" y="187" text-anchor="middle">blocked by · needs review · notes</text>
+<text class="sub" x="755" y="206" text-anchor="middle">stage: screen or full</text>
+<rect class="core" x="630" y="280" width="250" height="56" rx="5"/>
+<text class="name" x="755" y="304" text-anchor="middle">ranking</text>
+<text class="sub" x="755" y="323" text-anchor="middle">eligible, then full text, then total</text>
+
+<line class="edge" x1="230" y1="68" x2="298" y2="68" marker-end="url(#score-a)"/>
+<line class="edge" x1="230" y1="148" x2="298" y2="148" marker-end="url(#score-a)"/>
+<line class="edge" x1="230" y1="228" x2="298" y2="228" marker-end="url(#score-a)"/>
+<line class="edge" x1="230" y1="308" x2="298" y2="308" marker-end="url(#score-a)"/>
+<line class="edge" x1="425" y1="96" x2="425" y2="118" marker-end="url(#score-a)"/>
+
+<line class="edge" x1="550" y1="148" x2="628" y2="148" marker-end="url(#score-a)"/>
+<path class="edge" d="M550,228 L588,228 L588,190 L628,190" marker-end="url(#score-a)"/>
+<path class="edge" d="M550,308 L606,308 L606,212 L628,212" marker-end="url(#score-a)"/>
+
+<line class="edge" x1="755" y1="120" x2="755" y2="98" marker-end="url(#score-a)"/>
+<text class="lbl" x="763" y="113">at the screen</text>
+<line class="edge" x1="755" y1="226" x2="755" y2="278" marker-end="url(#score-a)"/>
+<text class="lbl" x="763" y="256">across papers</text>
+</svg>

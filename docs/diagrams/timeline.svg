@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="sd" viewBox="0 0 960 920" role="img" aria-labelledby="seq-title seq-desc">
+<title id="seq-title">What happens when you fetch today's papers</title>
+<desc id="seq-desc">The browser queues one batch per category. A worker fetches each category's announcement from arXiv and stores the papers. Every paper is screened on its abstract by Jev; papers that pass have their PDF fetched and their full text judged. The browser polls for the ranked list.</desc>
+<style>
+svg.sd{--bg:#FFFFFF;--band:#EEF2F4;--ink:#18222C;--muted:#5B6875;--line:#B9C3CC;--core:#2E6A86;--core-fill:#E1EEF4;--branch:#8C5B22;--branch-fill:#F6EBDD;--conv:#6B4A86;--conv-fill:#EEE7F4;--ban:#B23A3A;--ban-fill:#F8E4E2;--ext-fill:#E9EDF0;font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){svg.sd{--bg:#1A2229;--band:#222C35;--ink:#E3E9EE;--muted:#93A1AE;--line:#3E4B56;--core:#7FB9D4;--core-fill:#1C3340;--branch:#D9A566;--branch-fill:#3A2C1B;--conv:#B89AD2;--conv-fill:#2F2540;--ban:#E27A7A;--ban-fill:#3D2224;--ext-fill:#26313A}}
+.sd .bg{fill:var(--bg)}
+.sd text{fill:var(--ink);font-size:13px}
+.sd .name{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:14px}
+.sd .sub{fill:var(--muted);font-size:12px}
+.sd .dep{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.sd .tier{font-size:11px;letter-spacing:.1em;font-weight:600}
+.sd .phase{font-size:12px;font-weight:600}
+.sd .lbl{fill:var(--muted);font-size:11.5px}
+.sd .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+.sd .ret{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.sd .life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+.sd .band{fill:var(--band)}
+.sd .ext{fill:var(--ext-fill);stroke:var(--line);stroke-width:1.2}
+.sd .box{fill:var(--bg);stroke:var(--ink);stroke-width:1.2}
+.sd .aws{fill:none;stroke:var(--line);stroke-dasharray:5 4;stroke-width:1.4}
+.sd .core{fill:var(--core-fill);stroke:var(--core);stroke-width:1.5}
+.sd .branch{fill:var(--branch-fill);stroke:var(--branch);stroke-width:1.5}
+.sd .conv{fill:var(--conv-fill);stroke:var(--conv);stroke-width:1.5}
+.sd .gate{fill:var(--ban-fill);stroke:var(--ban);stroke-width:1.5}
+.sd .stall{fill:none;stroke:var(--conv);stroke-width:1.2;stroke-dasharray:4 3}
+.sd .t-core{fill:var(--core)}
+.sd .t-branch{fill:var(--branch)}
+.sd .t-conv{fill:var(--conv)}
+.sd .t-ban{fill:var(--ban)}
+.sd .ban{stroke:var(--ban);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.sd .ban-x{stroke:var(--ban);stroke-width:2}
+.sd .dot{fill:var(--ink)}
+.sd .head{fill:var(--muted)}
+.sd .head-ban{fill:var(--ban)}
+.sd .ban-edge{stroke:var(--ban);stroke-width:1.4;fill:none}
+.sd .halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+</style>
+<defs><marker id="seq-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker></defs>
+<rect class="bg" width="960" height="920" rx="8"/>
+<line class="life" x1="70" y1="52" x2="70" y2="908"/>
+<line class="life" x1="210" y1="52" x2="210" y2="908"/>
+<line class="life" x1="370" y1="52" x2="370" y2="908"/>
+<line class="life" x1="560" y1="52" x2="560" y2="908"/>
+<line class="life" x1="760" y1="52" x2="760" y2="908"/>
+<line class="life" x1="890" y1="52" x2="890" y2="908"/>
+<rect class="band" x="8" y="66" width="944" height="24" rx="3"/>
+<text x="18" y="82"><tspan class="phase">1 · Queue</tspan><tspan class="lbl" dx="10">you press “Fetch today's announcements”</tspan></text>
+<line class="edge" x1="70" y1="112" x2="207" y2="112" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="140" y="105" text-anchor="middle">POST /batches</text>
+<line class="edge" x1="210" y1="142" x2="367" y2="142" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="290" y="135" text-anchor="middle">a batch per category</text>
+<line class="ret" x1="210" y1="172" x2="73" y2="172" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="140" y="165" text-anchor="middle">202 · queued</text>
+<rect class="band" x="8" y="186" width="944" height="24" rx="3"/>
+<text x="18" y="202"><tspan class="phase">2 · Harvest</tspan><tspan class="lbl" dx="10">one request per category, one worker</tspan></text>
+<line class="edge" x1="560" y1="232" x2="373" y2="232" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="225" text-anchor="middle">claim due batch · lease</text>
+<line class="edge" x1="560" y1="262" x2="757" y2="262" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="660" y="255" text-anchor="middle">GET rss/cs.AI · paced</text>
+<line class="ret" x1="760" y1="292" x2="563" y2="292" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="660" y="285" text-anchor="middle">today's announcement</text>
+<line class="edge" x1="560" y1="322" x2="373" y2="322" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="315" text-anchor="middle">papers + items · batch done</text>
+<rect class="band" x="8" y="336" width="944" height="24" rx="3"/>
+<text x="18" y="352"><tspan class="phase">3 · Screen</tspan><tspan class="lbl" dx="10">every paper, from its abstract · 8 workers · answers cached</tspan></text>
+<line class="edge" x1="560" y1="382" x2="373" y2="382" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="375" text-anchor="middle">claim item waiting to screen</text>
+<line class="edge" x1="560" y1="412" x2="887" y2="412" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="725" y="405" text-anchor="middle">title + abstract · wants, dealbreakers</text>
+<line class="ret" x1="890" y1="442" x2="563" y2="442" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="725" y="435" text-anchor="middle">typed answers</text>
+<line class="edge" x1="560" y1="472" x2="373" y2="472" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="465" text-anchor="middle">verdict · then fetch or done</text>
+<rect class="band" x="8" y="486" width="944" height="24" rx="3"/>
+<text x="18" y="502"><tspan class="phase">4 · Fetch</tspan><tspan class="lbl" dx="10">only papers that passed · one arXiv request at a time</tspan></text>
+<line class="edge" x1="560" y1="532" x2="373" y2="532" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="525" text-anchor="middle">claim item waiting to fetch</text>
+<line class="edge" x1="560" y1="562" x2="757" y2="562" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="660" y="555" text-anchor="middle">GET pdf/&lt;id&gt; · paced</text>
+<line class="ret" x1="760" y1="592" x2="563" y2="592" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="660" y="585" text-anchor="middle">PDF, at most 50 MB</text>
+<line class="edge" x1="560" y1="622" x2="373" y2="622" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="615" text-anchor="middle">store text · then judge</text>
+<rect class="band" x="8" y="636" width="944" height="24" rx="3"/>
+<text x="18" y="652"><tspan class="phase">5 · Judge</tspan><tspan class="lbl" dx="10">the full text · 4 workers</tspan></text>
+<line class="edge" x1="560" y1="682" x2="373" y2="682" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="675" text-anchor="middle">claim item + its text</text>
+<line class="edge" x1="560" y1="712" x2="887" y2="712" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="725" y="705" text-anchor="middle">text without references · merit, integrity, wants</text>
+<line class="ret" x1="890" y1="742" x2="563" y2="742" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="725" y="735" text-anchor="middle">typed answers</text>
+<line class="edge" x1="560" y1="772" x2="373" y2="772" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="465" y="765" text-anchor="middle">full verdict · then done</text>
+<rect class="band" x="8" y="786" width="944" height="24" rx="3"/>
+<text x="18" y="802"><tspan class="phase">6 · Watch</tspan><tspan class="lbl" dx="10">the page refreshes while anything is still moving</tspan></text>
+<line class="edge" x1="70" y1="832" x2="207" y2="832" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="140" y="825" text-anchor="middle">poll every 2 s</text>
+<line class="edge" x1="210" y1="862" x2="367" y2="862" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="290" y="855" text-anchor="middle">papers, ranked</text>
+<line class="ret" x1="210" y1="892" x2="73" y2="892" marker-end="url(#seq-a)"/>
+<text class="lbl halo" x="140" y="885" text-anchor="middle">ranked list</text>
+<rect class="ext" x="18" y="14" width="104" height="38" rx="5"/>
+<text class="name" x="70" y="38" text-anchor="middle">Browser</text>
+<rect class="conv" x="158" y="14" width="104" height="38" rx="5"/>
+<text class="name" x="210" y="38" text-anchor="middle">API</text>
+<rect class="branch" x="318" y="14" width="104" height="38" rx="5"/>
+<text class="name" x="370" y="38" text-anchor="middle">Postgres</text>
+<rect class="conv" x="508" y="14" width="104" height="38" rx="5"/>
+<text class="name" x="560" y="38" text-anchor="middle">Workers</text>
+<rect class="ext" x="708" y="14" width="104" height="38" rx="5"/>
+<text class="name" x="760" y="38" text-anchor="middle">arXiv</text>
+<rect class="ext" x="838" y="14" width="104" height="38" rx="5"/>
+<text class="name" x="890" y="38" text-anchor="middle">Jev</text>
+</svg>

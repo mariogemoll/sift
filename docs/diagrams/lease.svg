@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="sd" viewBox="0 0 920 310" role="img" aria-labelledby="lease-title lease-desc">
+<title id="lease-title">How a lease survives a stalled worker</title>
+<desc id="lease-desc">Worker A claims an item under lease L1 and stalls. When L1 expires, worker B claims the item under lease L2, does the stage and records it. A's late write asks for lease L1, matches no row, and changes nothing.</desc>
+<style>
+svg.sd{--bg:#FFFFFF;--band:#EEF2F4;--ink:#18222C;--muted:#5B6875;--line:#B9C3CC;--core:#2E6A86;--core-fill:#E1EEF4;--branch:#8C5B22;--branch-fill:#F6EBDD;--conv:#6B4A86;--conv-fill:#EEE7F4;--ban:#B23A3A;--ban-fill:#F8E4E2;--ext-fill:#E9EDF0;font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){svg.sd{--bg:#1A2229;--band:#222C35;--ink:#E3E9EE;--muted:#93A1AE;--line:#3E4B56;--core:#7FB9D4;--core-fill:#1C3340;--branch:#D9A566;--branch-fill:#3A2C1B;--conv:#B89AD2;--conv-fill:#2F2540;--ban:#E27A7A;--ban-fill:#3D2224;--ext-fill:#26313A}}
+.sd .bg{fill:var(--bg)}
+.sd text{fill:var(--ink);font-size:13px}
+.sd .name{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:14px}
+.sd .sub{fill:var(--muted);font-size:12px}
+.sd .dep{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.sd .tier{font-size:11px;letter-spacing:.1em;font-weight:600}
+.sd .phase{font-size:12px;font-weight:600}
+.sd .lbl{fill:var(--muted);font-size:11.5px}
+.sd .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+.sd .ret{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.sd .life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+.sd .band{fill:var(--band)}
+.sd .ext{fill:var(--ext-fill);stroke:var(--line);stroke-width:1.2}
+.sd .box{fill:var(--bg);stroke:var(--ink);stroke-width:1.2}
+.sd .aws{fill:none;stroke:var(--line);stroke-dasharray:5 4;stroke-width:1.4}
+.sd .core{fill:var(--core-fill);stroke:var(--core);stroke-width:1.5}
+.sd .branch{fill:var(--branch-fill);stroke:var(--branch);stroke-width:1.5}
+.sd .conv{fill:var(--conv-fill);stroke:var(--conv);stroke-width:1.5}
+.sd .gate{fill:var(--ban-fill);stroke:var(--ban);stroke-width:1.5}
+.sd .stall{fill:none;stroke:var(--conv);stroke-width:1.2;stroke-dasharray:4 3}
+.sd .t-core{fill:var(--core)}
+.sd .t-branch{fill:var(--branch)}
+.sd .t-conv{fill:var(--conv)}
+.sd .t-ban{fill:var(--ban)}
+.sd .ban{stroke:var(--ban);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.sd .ban-x{stroke:var(--ban);stroke-width:2}
+.sd .dot{fill:var(--ink)}
+.sd .head{fill:var(--muted)}
+.sd .head-ban{fill:var(--ban)}
+.sd .ban-edge{stroke:var(--ban);stroke-width:1.4;fill:none}
+.sd .halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+</style>
+<defs>
+<marker id="lease-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker>
+<marker id="lease-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-ban"/></marker>
+</defs>
+<rect class="bg" width="920" height="310" rx="8"/>
+
+<text class="name" x="20" y="88">worker A</text>
+<text class="name" x="20" y="169">item row</text>
+<text class="name" x="20" y="248">worker B</text>
+
+<!-- expiry -->
+<line class="life" x1="440" y1="44" x2="440" y2="276"/>
+<text class="lbl" x="440" y="36" text-anchor="middle">L1 expires</text>
+
+<!-- worker A -->
+<rect class="conv" x="130" y="70" width="48" height="26" rx="4"/>
+<text class="lbl" x="154" y="87" text-anchor="middle">claim</text>
+<rect class="conv" x="178" y="76" width="190" height="14"/>
+<text class="lbl" x="182" y="64">asks Jev or downloads · no transaction open</text>
+<rect class="stall" x="368" y="76" width="242" height="14"/>
+<text class="lbl halo" x="500" y="87" text-anchor="middle">stalled</text>
+<line class="edge" x1="154" y1="96" x2="154" y2="148" marker-end="url(#lease-a)"/>
+
+<!-- A's late write -->
+<rect class="gate" x="610" y="70" width="52" height="26" rx="4"/>
+<text class="lbl t-ban" x="636" y="87" text-anchor="middle">write</text>
+<line class="ban-edge" x1="636" y1="96" x2="636" y2="148" marker-end="url(#lease-r)"/>
+<text class="lbl t-ban" x="646" y="118">WHERE lease = L1</text>
+<text class="lbl t-ban" x="646" y="133">0 rows · nothing written</text>
+
+<!-- item row -->
+<rect class="branch" x="150" y="150" width="290" height="28"/>
+<text class="lbl" x="295" y="168" text-anchor="middle" style="fill:var(--ink)">lease L1 · until claim + 5 min</text>
+<rect class="branch" x="462" y="150" width="318" height="28"/>
+<text class="lbl" x="560" y="168" text-anchor="middle" style="fill:var(--ink)">lease L2</text>
+<rect class="core" x="780" y="150" width="120" height="28"/>
+<text class="lbl" x="840" y="168" text-anchor="middle" style="fill:var(--ink)">next stage, free</text>
+
+<!-- worker B -->
+<rect class="conv" x="440" y="230" width="48" height="26" rx="4"/>
+<text class="lbl" x="464" y="247" text-anchor="middle">claim</text>
+<line class="edge" x1="464" y1="230" x2="464" y2="180" marker-end="url(#lease-a)"/>
+<rect class="conv" x="488" y="236" width="240" height="14"/>
+<text class="lbl" x="494" y="270">same stage, from the start</text>
+<rect class="conv" x="728" y="230" width="56" height="26" rx="4"/>
+<text class="lbl" x="756" y="247" text-anchor="middle">record</text>
+<line class="edge" x1="756" y1="230" x2="756" y2="180" marker-end="url(#lease-a)"/>
+<text class="lbl t-core" x="766" y="210">WHERE lease = L2 ✓</text>
+
+<!-- time -->
+<line class="edge" x1="130" y1="292" x2="900" y2="292" marker-end="url(#lease-a)"/>
+<text class="lbl" x="896" y="284" text-anchor="end">time</text>
+</svg>

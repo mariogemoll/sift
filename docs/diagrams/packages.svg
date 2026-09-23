@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="sd" viewBox="0 0 920 610" role="img" aria-labelledby="pkg-title pkg-desc">
+<title id="pkg-title">Backend packages</title>
+<desc id="pkg-desc">Packages by topic. The api and cli entry points sit on the pipeline, which joins the topic packages storage, arxiv, auth and judging. Below them are the shared pure modules types and retry. Pure modules, including auth.passphrase and all of judging except the TypeSafe adapter, import no third-party library.</desc>
+<style>
+svg.sd{--bg:#FFFFFF;--band:#EEF2F4;--ink:#18222C;--muted:#5B6875;--line:#B9C3CC;--core:#2E6A86;--core-fill:#E1EEF4;--branch:#8C5B22;--branch-fill:#F6EBDD;--conv:#6B4A86;--conv-fill:#EEE7F4;--ban:#B23A3A;--ban-fill:#F8E4E2;--ext-fill:#E9EDF0;font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){svg.sd{--bg:#1A2229;--band:#222C35;--ink:#E3E9EE;--muted:#93A1AE;--line:#3E4B56;--core:#7FB9D4;--core-fill:#1C3340;--branch:#D9A566;--branch-fill:#3A2C1B;--conv:#B89AD2;--conv-fill:#2F2540;--ban:#E27A7A;--ban-fill:#3D2224;--ext-fill:#26313A}}
+.sd .bg{fill:var(--bg)}
+.sd text{fill:var(--ink);font-size:13px}
+.sd .name{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:14px}
+.sd .sub{fill:var(--muted);font-size:12px}
+.sd .dep{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.sd .tier{font-size:11px;letter-spacing:.1em;font-weight:600}
+.sd .phase{font-size:12px;font-weight:600}
+.sd .lbl{fill:var(--muted);font-size:11.5px}
+.sd .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+.sd .ret{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.sd .life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+.sd .band{fill:var(--band)}
+.sd .ext{fill:var(--ext-fill);stroke:var(--line);stroke-width:1.2}
+.sd .box{fill:var(--bg);stroke:var(--ink);stroke-width:1.2}
+.sd .aws{fill:none;stroke:var(--line);stroke-dasharray:5 4;stroke-width:1.4}
+.sd .core{fill:var(--core-fill);stroke:var(--core);stroke-width:1.5}
+.sd .branch{fill:var(--branch-fill);stroke:var(--branch);stroke-width:1.5}
+.sd .conv{fill:var(--conv-fill);stroke:var(--conv);stroke-width:1.5}
+.sd .gate{fill:var(--ban-fill);stroke:var(--ban);stroke-width:1.5}
+.sd .stall{fill:none;stroke:var(--conv);stroke-width:1.2;stroke-dasharray:4 3}
+.sd .t-core{fill:var(--core)}
+.sd .t-branch{fill:var(--branch)}
+.sd .t-conv{fill:var(--conv)}
+.sd .t-ban{fill:var(--ban)}
+.sd .ban{stroke:var(--ban);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.sd .ban-x{stroke:var(--ban);stroke-width:2}
+.sd .dot{fill:var(--ink)}
+.sd .head{fill:var(--muted)}
+.sd .head-ban{fill:var(--ban)}
+.sd .ban-edge{stroke:var(--ban);stroke-width:1.4;fill:none}
+.sd .halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+</style>
+<defs><marker id="pkg-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker></defs>
+<rect class="bg" width="920" height="610" rx="8"/>
+
+<text class="tier t-conv" x="90" y="36">ENTRY POINTS</text>
+<text class="tier t-conv" x="90" y="176">JOINS THE TOPICS</text>
+<text class="tier t-branch" x="90" y="316">TOPICS · may use one another</text>
+<text class="tier t-core" x="90" y="476">SHARED · pure</text>
+
+<rect class="conv" x="90" y="50" width="250" height="80" rx="5"/>
+<text class="name" x="215" y="76" text-anchor="middle">api/</text>
+<text class="sub" x="215" y="96" text-anchor="middle">FastAPI app · routes · schemas</text>
+<text class="dep" x="215" y="116" text-anchor="middle">fastapi · pydantic</text>
+
+<rect class="conv" x="380" y="50" width="160" height="80" rx="5"/>
+<text class="name" x="460" y="76" text-anchor="middle">cli/</text>
+<text class="sub" x="460" y="96" text-anchor="middle">sift command</text>
+<text class="dep" x="460" y="116" text-anchor="middle">uvicorn</text>
+
+<rect class="box" x="785" y="50" width="110" height="80" rx="5"/>
+<text class="name" x="840" y="83" text-anchor="middle" style="font-size:13px">settings.py</text>
+<text class="sub" x="840" y="103" text-anchor="middle">from the env</text>
+
+<rect class="conv" x="90" y="190" width="450" height="80" rx="5"/>
+<text class="name" x="315" y="216" text-anchor="middle">pipeline/</text>
+<text class="sub" x="315" y="236" text-anchor="middle">harvester + stage workers · the wishlist</text>
+<text class="dep" x="315" y="256" text-anchor="middle">sqlalchemy · httpx</text>
+
+<rect class="branch" x="90" y="330" width="190" height="96" rx="5"/>
+<text class="name" x="185" y="356" text-anchor="middle">storage/</text>
+<text class="sub" x="185" y="376" text-anchor="middle">models + repo functions</text>
+<text class="dep" x="185" y="408" text-anchor="middle">sqlalchemy</text>
+
+<rect class="branch" x="300" y="330" width="190" height="96" rx="5"/>
+<text class="name" x="395" y="356" text-anchor="middle">arxiv/</text>
+<text class="sub" x="395" y="376" text-anchor="middle">announcements · PDFs · pacer</text>
+<text class="dep" x="395" y="408" text-anchor="middle">httpx · pypdf</text>
+
+<rect class="branch" x="510" y="330" width="180" height="96" rx="5"/>
+<text class="name" x="600" y="356" text-anchor="middle">auth/</text>
+<text class="sub" x="600" y="376" text-anchor="middle">passphrase · gate</text>
+<rect class="core" x="520" y="392" width="160" height="24" rx="4"/>
+<text class="dep" x="600" y="408" text-anchor="middle">passphrase.py · pure</text>
+
+<rect class="branch" x="710" y="330" width="185" height="96" rx="5"/>
+<text class="name" x="802" y="356" text-anchor="middle">judging/</text>
+<text class="sub" x="802" y="376" text-anchor="middle">questions · scoring · Asker</text>
+<rect class="core" x="720" y="392" width="165" height="24" rx="4"/>
+<text class="dep" x="802" y="408" text-anchor="middle">pure but typesafe.py</text>
+
+<rect class="core" x="90" y="490" width="390" height="64" rx="5"/>
+<text class="name" x="285" y="516" text-anchor="middle">types.py</text>
+<text class="sub" x="285" y="536" text-anchor="middle">papers · batches · stages · pages</text>
+
+<rect class="core" x="500" y="490" width="395" height="64" rx="5"/>
+<text class="name" x="697" y="516" text-anchor="middle">retry.py</text>
+<text class="sub" x="697" y="536" text-anchor="middle">try again later, or give up for good</text>
+
+<line class="edge" x1="215" y1="130" x2="215" y2="188" marker-end="url(#pkg-a)"/>
+<line class="edge" x1="530" y1="130" x2="600" y2="328" marker-end="url(#pkg-a)"/>
+
+<line class="edge" x1="185" y1="270" x2="185" y2="328" marker-end="url(#pkg-a)"/>
+<line class="edge" x1="395" y1="270" x2="395" y2="328" marker-end="url(#pkg-a)"/>
+<line class="edge" x1="520" y1="270" x2="780" y2="328" marker-end="url(#pkg-a)"/>
+
+<line class="edge" x1="185" y1="426" x2="185" y2="488" marker-end="url(#pkg-a)"/>
+<line class="edge" x1="395" y1="426" x2="395" y2="488" marker-end="url(#pkg-a)"/>
+<line class="edge" x1="802" y1="426" x2="802" y2="488" marker-end="url(#pkg-a)"/>
+
+<rect class="core" x="90" y="576" width="14" height="14" rx="3"/>
+<text class="lbl" x="112" y="587">pure: no third-party imports, directly or indirectly — checked by import-linter</text>
+</svg>

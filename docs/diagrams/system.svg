@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="sd" viewBox="0 0 920 330" role="img" aria-labelledby="sys-title sys-desc">
+<title id="sys-title">sift as deployed</title>
+<desc id="sys-desc">The browser reaches CloudFront, which serves the single-page app from S3 and routes /api to a load balancer in front of the Fargate backend. The backend talks to RDS Postgres, arXiv and TypeSafe's Jev model.</desc>
+<style>
+svg.sd{--bg:#FFFFFF;--band:#EEF2F4;--ink:#18222C;--muted:#5B6875;--line:#B9C3CC;--core:#2E6A86;--core-fill:#E1EEF4;--branch:#8C5B22;--branch-fill:#F6EBDD;--conv:#6B4A86;--conv-fill:#EEE7F4;--ban:#B23A3A;--ban-fill:#F8E4E2;--ext-fill:#E9EDF0;font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){svg.sd{--bg:#1A2229;--band:#222C35;--ink:#E3E9EE;--muted:#93A1AE;--line:#3E4B56;--core:#7FB9D4;--core-fill:#1C3340;--branch:#D9A566;--branch-fill:#3A2C1B;--conv:#B89AD2;--conv-fill:#2F2540;--ban:#E27A7A;--ban-fill:#3D2224;--ext-fill:#26313A}}
+.sd .bg{fill:var(--bg)}
+.sd text{fill:var(--ink);font-size:13px}
+.sd .name{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:14px}
+.sd .sub{fill:var(--muted);font-size:12px}
+.sd .dep{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.sd .tier{font-size:11px;letter-spacing:.1em;font-weight:600}
+.sd .phase{font-size:12px;font-weight:600}
+.sd .lbl{fill:var(--muted);font-size:11.5px}
+.sd .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+.sd .ret{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.sd .life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+.sd .band{fill:var(--band)}
+.sd .ext{fill:var(--ext-fill);stroke:var(--line);stroke-width:1.2}
+.sd .box{fill:var(--bg);stroke:var(--ink);stroke-width:1.2}
+.sd .aws{fill:none;stroke:var(--line);stroke-dasharray:5 4;stroke-width:1.4}
+.sd .core{fill:var(--core-fill);stroke:var(--core);stroke-width:1.5}
+.sd .branch{fill:var(--branch-fill);stroke:var(--branch);stroke-width:1.5}
+.sd .conv{fill:var(--conv-fill);stroke:var(--conv);stroke-width:1.5}
+.sd .gate{fill:var(--ban-fill);stroke:var(--ban);stroke-width:1.5}
+.sd .stall{fill:none;stroke:var(--conv);stroke-width:1.2;stroke-dasharray:4 3}
+.sd .t-core{fill:var(--core)}
+.sd .t-branch{fill:var(--branch)}
+.sd .t-conv{fill:var(--conv)}
+.sd .t-ban{fill:var(--ban)}
+.sd .ban{stroke:var(--ban);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.sd .ban-x{stroke:var(--ban);stroke-width:2}
+.sd .dot{fill:var(--ink)}
+.sd .head{fill:var(--muted)}
+.sd .head-ban{fill:var(--ban)}
+.sd .ban-edge{stroke:var(--ban);stroke-width:1.4;fill:none}
+.sd .halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+</style>
+<defs><marker id="sys-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker></defs>
+<rect class="bg" width="920" height="330" rx="8"/>
+
+<rect class="aws" x="180" y="18" width="560" height="294" rx="8"/>
+<text class="lbl" x="196" y="38">AWS eu-west-2 · infra/ (Terraform)</text>
+
+<rect class="ext" x="16" y="135" width="130" height="58" rx="5"/>
+<text class="name" x="81" y="159" text-anchor="middle">Browser</text>
+<text class="sub" x="81" y="178" text-anchor="middle">React SPA</text>
+
+<rect class="box" x="210" y="135" width="112" height="58" rx="5"/>
+<text class="name" x="266" y="159" text-anchor="middle">CloudFront</text>
+<text class="sub" x="266" y="178" text-anchor="middle">prefix split</text>
+
+<rect class="box" x="370" y="50" width="140" height="58" rx="5"/>
+<text class="name" x="440" y="74" text-anchor="middle">S3 bucket</text>
+<text class="sub" x="440" y="93" text-anchor="middle">frontend/ build</text>
+
+<rect class="box" x="370" y="226" width="110" height="58" rx="5"/>
+<text class="name" x="425" y="250" text-anchor="middle">ALB</text>
+<text class="sub" x="425" y="269" text-anchor="middle">/health polled</text>
+
+<rect class="conv" x="530" y="210" width="190" height="90" rx="5"/>
+<text class="name" x="625" y="234" text-anchor="middle">Fargate · backend/</text>
+<text class="sub" x="625" y="254" text-anchor="middle">FastAPI app</text>
+<text class="sub" x="625" y="271" text-anchor="middle">+ in-process workers</text>
+<text class="dep" x="625" y="290" text-anchor="middle">SIFT_WORKER</text>
+
+<rect class="branch" x="565" y="60" width="155" height="58" rx="5"/>
+<text class="name" x="642" y="84" text-anchor="middle">RDS Postgres</text>
+<text class="sub" x="642" y="103" text-anchor="middle">papers · texts · verdicts</text>
+
+<rect class="ext" x="784" y="150" width="120" height="58" rx="5"/>
+<text class="name" x="844" y="174" text-anchor="middle">arXiv</text>
+<text class="sub" x="844" y="193" text-anchor="middle">RSS + PDFs</text>
+
+<rect class="ext" x="784" y="252" width="120" height="58" rx="5"/>
+<text class="name" x="844" y="276" text-anchor="middle">TypeSafe</text>
+<text class="sub" x="844" y="295" text-anchor="middle">Jev model</text>
+
+<line class="edge" x1="146" y1="164" x2="208" y2="164" marker-end="url(#sys-a)"/>
+<text class="lbl" x="177" y="156" text-anchor="middle">HTTPS</text>
+
+<path class="edge" d="M300,135 L300,79 L368,79" marker-end="url(#sys-a)"/>
+<text class="lbl" x="334" y="72" text-anchor="middle">/*</text>
+
+<path class="edge" d="M300,193 L300,255 L368,255" marker-end="url(#sys-a)"/>
+<text class="lbl" x="334" y="247" text-anchor="middle">/api/*</text>
+
+<line class="edge" x1="480" y1="255" x2="528" y2="255" marker-end="url(#sys-a)"/>
+
+<line class="edge" x1="642" y1="210" x2="642" y2="120" marker-end="url(#sys-a)"/>
+<text class="lbl" x="650" y="160">SQL · leases</text>
+<text class="lbl" x="650" y="175">SKIP LOCKED</text>
+
+<path class="edge" d="M720,232 L752,232 L752,179 L782,179" marker-end="url(#sys-a)"/>
+<text class="lbl" x="767" y="171" text-anchor="middle">paced</text>
+
+<line class="edge" x1="720" y1="281" x2="782" y2="281" marker-end="url(#sys-a)"/>
+<text class="lbl" x="752" y="273" text-anchor="middle">ask</text>
+</svg>

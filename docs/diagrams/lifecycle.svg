@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="sd" viewBox="0 0 920 480" role="img" aria-labelledby="life-title life-desc">
+<title id="life-title">The life of a paper and of a batch</title>
+<desc id="life-desc">A paper's item waits for screen, then fetch, then judge, then is done; a paper passed over at the screen goes straight to done. Any stage retries after a backoff, and a terminal failure or used-up attempts make the item dead. A batch goes from queued to harvesting to done, or to failed.</desc>
+<style>
+svg.sd{--bg:#FFFFFF;--band:#EEF2F4;--ink:#18222C;--muted:#5B6875;--line:#B9C3CC;--core:#2E6A86;--core-fill:#E1EEF4;--branch:#8C5B22;--branch-fill:#F6EBDD;--conv:#6B4A86;--conv-fill:#EEE7F4;--ban:#B23A3A;--ban-fill:#F8E4E2;--ext-fill:#E9EDF0;font-family:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+@media (prefers-color-scheme:dark){svg.sd{--bg:#1A2229;--band:#222C35;--ink:#E3E9EE;--muted:#93A1AE;--line:#3E4B56;--core:#7FB9D4;--core-fill:#1C3340;--branch:#D9A566;--branch-fill:#3A2C1B;--conv:#B89AD2;--conv-fill:#2F2540;--ban:#E27A7A;--ban-fill:#3D2224;--ext-fill:#26313A}}
+.sd .bg{fill:var(--bg)}
+.sd text{fill:var(--ink);font-size:13px}
+.sd .name{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;font-size:14px}
+.sd .sub{fill:var(--muted);font-size:12px}
+.sd .dep{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.sd .tier{font-size:11px;letter-spacing:.1em;font-weight:600}
+.sd .phase{font-size:12px;font-weight:600}
+.sd .lbl{fill:var(--muted);font-size:11.5px}
+.sd .edge{stroke:var(--muted);stroke-width:1.4;fill:none}
+.sd .ret{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 3;fill:none}
+.sd .life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:3 4;fill:none}
+.sd .band{fill:var(--band)}
+.sd .ext{fill:var(--ext-fill);stroke:var(--line);stroke-width:1.2}
+.sd .box{fill:var(--bg);stroke:var(--ink);stroke-width:1.2}
+.sd .aws{fill:none;stroke:var(--line);stroke-dasharray:5 4;stroke-width:1.4}
+.sd .core{fill:var(--core-fill);stroke:var(--core);stroke-width:1.5}
+.sd .branch{fill:var(--branch-fill);stroke:var(--branch);stroke-width:1.5}
+.sd .conv{fill:var(--conv-fill);stroke:var(--conv);stroke-width:1.5}
+.sd .gate{fill:var(--ban-fill);stroke:var(--ban);stroke-width:1.5}
+.sd .stall{fill:none;stroke:var(--conv);stroke-width:1.2;stroke-dasharray:4 3}
+.sd .t-core{fill:var(--core)}
+.sd .t-branch{fill:var(--branch)}
+.sd .t-conv{fill:var(--conv)}
+.sd .t-ban{fill:var(--ban)}
+.sd .ban{stroke:var(--ban);stroke-width:1.4;stroke-dasharray:3 3;fill:none}
+.sd .ban-x{stroke:var(--ban);stroke-width:2}
+.sd .dot{fill:var(--ink)}
+.sd .head{fill:var(--muted)}
+.sd .head-ban{fill:var(--ban)}
+.sd .ban-edge{stroke:var(--ban);stroke-width:1.4;fill:none}
+.sd .halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+</style>
+<defs>
+<marker id="life-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker>
+<marker id="life-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-ban"/></marker>
+</defs>
+<rect class="bg" width="920" height="480" rx="8"/>
+
+<text class="tier t-conv" x="20" y="24">PAPER · one item per paper in a batch</text>
+
+<!-- passed over -->
+<path class="edge" d="M118,100 L118,50 L845,50 L845,98" marker-end="url(#life-a)"/>
+<text class="lbl halo" x="480" y="44" text-anchor="middle">passed over: blocked by a dealbreaker, or fit below 0.5 · the screen verdict is kept</text>
+
+<!-- entry -->
+<circle class="dot" cx="40" cy="125" r="6"/>
+<text class="lbl" x="40" y="160" text-anchor="middle">harvested</text>
+<line class="edge" x1="46" y1="125" x2="98" y2="125" marker-end="url(#life-a)"/>
+
+<rect class="conv" x="100" y="100" width="120" height="50" rx="5"/>
+<text class="name" x="160" y="130" text-anchor="middle">screen</text>
+<rect class="conv" x="330" y="100" width="120" height="50" rx="5"/>
+<text class="name" x="390" y="130" text-anchor="middle">fetch</text>
+<rect class="conv" x="560" y="100" width="120" height="50" rx="5"/>
+<text class="name" x="620" y="130" text-anchor="middle">judge</text>
+<rect class="core" x="790" y="100" width="110" height="50" rx="5"/>
+<text class="name" x="845" y="130" text-anchor="middle">done</text>
+
+<line class="edge" x1="220" y1="125" x2="328" y2="125" marker-end="url(#life-a)"/>
+<text class="lbl" x="275" y="117" text-anchor="middle">passes</text>
+<text class="lbl" x="275" y="142" text-anchor="middle">fit ≥ 0.5</text>
+<line class="edge" x1="450" y1="125" x2="558" y2="125" marker-end="url(#life-a)"/>
+<text class="lbl" x="505" y="117" text-anchor="middle">text stored</text>
+<line class="edge" x1="680" y1="125" x2="788" y2="125" marker-end="url(#life-a)"/>
+<text class="lbl" x="735" y="117" text-anchor="middle">full verdict</text>
+
+<!-- retry loops -->
+<path class="edge" d="M142,100 C142,70 178,70 178,98" marker-end="url(#life-a)"/>
+<text class="lbl" x="184" y="80">retry</text>
+<path class="edge" d="M372,100 C372,70 408,70 408,98" marker-end="url(#life-a)"/>
+<text class="lbl" x="414" y="80">retry</text>
+<path class="edge" d="M602,100 C602,70 638,70 638,98" marker-end="url(#life-a)"/>
+<text class="lbl" x="644" y="80">retry</text>
+
+<!-- dead -->
+<rect class="gate" x="400" y="240" width="120" height="50" rx="5"/>
+<text class="name t-ban" x="460" y="270" text-anchor="middle">dead</text>
+<line class="ban-edge" x1="170" y1="150" x2="418" y2="238" marker-end="url(#life-r)"/>
+<line class="ban-edge" x1="400" y1="150" x2="448" y2="238" marker-end="url(#life-r)"/>
+<line class="ban-edge" x1="610" y1="150" x2="490" y2="238" marker-end="url(#life-r)"/>
+<text class="lbl" x="536" y="262">a terminal failure, or the 5th attempt fails</text>
+<text class="lbl" x="536" y="279">the reason stays on the item</text>
+
+<text class="tier t-branch" x="20" y="344">BATCH · one per category each time you ask</text>
+
+<rect class="ext" x="100" y="380" width="120" height="46" rx="5"/>
+<text class="name" x="160" y="408" text-anchor="middle">queued</text>
+<rect class="branch" x="330" y="380" width="120" height="46" rx="5"/>
+<text class="name" x="390" y="408" text-anchor="middle">harvesting</text>
+<rect class="core" x="560" y="380" width="120" height="46" rx="5"/>
+<text class="name" x="620" y="408" text-anchor="middle">done</text>
+<rect class="gate" x="790" y="380" width="110" height="46" rx="5"/>
+<text class="name t-ban" x="845" y="408" text-anchor="middle">failed</text>
+
+<line class="edge" x1="220" y1="403" x2="328" y2="403" marker-end="url(#life-a)"/>
+<text class="lbl" x="275" y="395" text-anchor="middle">claimed</text>
+<line class="edge" x1="450" y1="403" x2="558" y2="403" marker-end="url(#life-a)"/>
+<text class="lbl" x="505" y="395" text-anchor="middle">papers stored</text>
+<path class="edge" d="M372,380 C372,350 408,350 408,378" marker-end="url(#life-a)"/>
+<text class="lbl" x="414" y="360">retry</text>
+<path class="ban-edge" d="M390,426 L390,452 L845,452 L845,428" marker-end="url(#life-r)"/>
+<text class="lbl halo" x="720" y="456" text-anchor="middle">a terminal failure, or the 5th attempt fails</text>
+</svg>

@@ -15,7 +15,7 @@ backend/     the Python service — FastAPI, SQLAlchemy, Alembic, the CLI
 frontend/    the React SPA — Vite, TypeScript
 infra/       the AWS stack — Terraform
 openapi.json the contract between them, generated from the backend
-docs/        diagrams/ — hand-written SVG, embedded in README.md
+docs/        diagrams/ — SVG source, edited directly, embedded in README.md
 docker-compose.yml
 ```
 
