@@ -7,7 +7,7 @@ export type PaperPage = components["schemas"]["PaperPage"];
 export type Health = components["schemas"]["HealthResponse"];
 export type Session = components["schemas"]["SessionStatus"];
 export type BatchRequest = components["schemas"]["BatchRequest"];
-export type BatchResult = components["schemas"]["BatchResult"];
+export type Batch = components["schemas"]["BatchOut"];
 
 // Relative, so the dev server's proxy and the deployed origin behave alike.
 // Same-origin means fetch sends the session cookie without being asked to.
@@ -85,13 +85,24 @@ const detailOf = (body: unknown): string | null => {
   return null;
 };
 
-export async function submitBatch(request: BatchRequest): Promise<BatchResult> {
+export async function submitBatch(request: BatchRequest): Promise<Batch> {
   const { data, error, response } = await api.POST("/batches", {
     body: request,
   });
   if (error !== undefined || data === undefined) {
     if (response.status === 401) throw new Unauthorized();
     throw new Error(detailOf(error) ?? `the batch failed (${response.status})`);
+  }
+  return data;
+}
+
+export async function fetchBatches(limit = 10): Promise<Batch[]> {
+  const { data, error, response } = await api.GET("/batches", {
+    params: { query: { limit } },
+  });
+  if (error !== undefined || data === undefined) {
+    if (response.status === 401) throw new Unauthorized();
+    throw new Error("could not load batches");
   }
   return data;
 }

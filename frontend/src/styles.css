@@ -127,6 +127,53 @@ form.batch .note {
   margin: 0;
 }
 
+/* Recent batches: one line each, wrapping the error underneath. */
+ul.batches {
+  list-style: none;
+  padding: 0;
+  margin: -0.75rem 0 1.75rem;
+  font-size: 0.86rem;
+}
+
+ul.batches li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+ul.batches .what {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+ul.batches .progress,
+ul.batches .when {
+  color: var(--muted);
+}
+
+ul.batches .when {
+  margin-left: auto;
+}
+
+ul.batches .why {
+  flex-basis: 100%;
+  color: var(--bad);
+  font-size: 0.8rem;
+}
+
+.badge.state-done {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.badge.state-failed,
+.badge.state-retrying {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+}
+
 table.papers {
   width: 100%;
   border-collapse: collapse;

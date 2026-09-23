@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Unauthorized, fetchHealth, fetchPapers } from "./api/client";
+import { Unauthorized, fetchBatches, fetchHealth, fetchPapers } from "./api/client";
 import { useAsync } from "./api/useAsync";
 import { useSession } from "./api/useSession";
 import { BatchForm } from "./components/BatchForm";
+import { BatchList } from "./components/BatchList";
 import { HealthBadge } from "./components/HealthBadge";
 import { PapersTable } from "./components/PapersTable";
 import { SignIn } from "./components/SignIn";
+
+const POLL_MS = 2000;
 
 export function App() {
   const { view, enter, leave, ended } = useSession();
@@ -39,18 +42,30 @@ function Workspace({
   onEnded: () => void;
 }) {
   const health = useAsync(fetchHealth);
-  // Bumped after a batch lands, so the table reloads with the new rows.
+  // Bumped to reload batches and papers together: after a submission, and on a
+  // timer while any batch is still running, since a worker fills them in.
   const [generation, setGeneration] = useState(0);
   const papers = useAsync(() => fetchPapers(), [generation]);
+  const batches = useAsync(() => fetchBatches(), [generation]);
   const reload = useCallback(() => setGeneration((value) => value + 1), []);
+
+  const running =
+    batches.status === "ready" &&
+    batches.value.some((batch) => batch.state === "queued" || batch.state === "harvesting");
+  useEffect(() => {
+    if (!running) return;
+    const timer = setTimeout(reload, POLL_MS);
+    return () => clearTimeout(timer);
+  }, [running, generation, reload]);
 
   // A cookie can expire between loading the page and asking for data. That is
   // not an error to show, it is the login page again.
   useEffect(() => {
-    if (papers.status === "failed" && papers.error instanceof Unauthorized) {
-      onEnded();
-    }
-  }, [papers, onEnded]);
+    const expired = [papers, batches].some(
+      (loaded) => loaded.status === "failed" && loaded.error instanceof Unauthorized,
+    );
+    if (expired) onEnded();
+  }, [papers, batches, onEnded]);
 
   return (
     <main>
@@ -72,6 +87,7 @@ function Workspace({
       </header>
 
       <BatchForm onDone={reload} onEnded={onEnded} />
+      {batches.status === "ready" && <BatchList batches={batches.value} />}
 
       {papers.status === "loading" && <p className="note">Loading papers…</p>}
       {papers.status === "failed" && (

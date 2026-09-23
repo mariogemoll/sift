@@ -5,9 +5,9 @@ set (a category) and by datestamp — the day a record was last changed — so a
 window catches papers that were revised in it as well as ones that are new.
 
 A response holds one page of records plus a resumption token when there are
-more. This module reads the first page; `Listing.total` says how many matched in
-all. Everything except `fetch_listing` is pure, so the request and the parsing
-are tested without a network.
+more; the next page is asked for by that token alone. Everything except
+`fetch_page` is pure, so the requests and the parsing are tested without a
+network.
 """
 
 import re
@@ -59,10 +59,14 @@ class QueryRejected(ListingError):
 
 @dataclass(frozen=True, slots=True)
 class Listing:
-    """The papers one request returned, and how many matched in all."""
+    """One page: its papers, and the token for the next page, None on the last.
+
+    There is no total. arXiv's `completeListSize` turns out to describe the page
+    in hand rather than the whole list, so it is not read.
+    """
 
     papers: tuple[Paper, ...]
-    total: int
+    resumption_token: str | None
 
 
 def set_of(category: str) -> str:
@@ -79,7 +83,7 @@ def valid_category(category: str) -> bool:
     return _CATEGORY.fullmatch(category) is not None
 
 
-def request_params(category: str, since: date, until: date) -> dict[str, str]:
+def first_page(category: str, since: date, until: date) -> dict[str, str]:
     """Records in `category` changed from `since` to `until`, inclusive, in arXiv's own format."""
     return {
         "verb": "ListRecords",
@@ -88,6 +92,11 @@ def request_params(category: str, since: date, until: date) -> dict[str, str]:
         "from": since.isoformat(),
         "until": until.isoformat(),
     }
+
+
+def next_page(resumption_token: str) -> dict[str, str]:
+    """The page after the one that handed out `resumption_token`. The token carries the query."""
+    return {"verb": "ListRecords", "resumptionToken": resumption_token}
 
 
 def _text(element: ElementTree.Element, path: str) -> str:
@@ -130,7 +139,7 @@ def parse_response(body: str | bytes) -> Listing:
     if refusal is not None:
         code = refusal.get("code", "")
         if code == "noRecordsMatch":
-            return Listing(papers=(), total=0)
+            return Listing(papers=(), resumption_token=None)
         reason = _WHITESPACE.sub(" ", refusal.text or code).strip()
         raise QueryRejected(f"arXiv rejected the request: {reason}")
 
@@ -141,18 +150,19 @@ def parse_response(body: str | bytes) -> Listing:
     papers = tuple(
         _paper(metadata) for metadata in records.findall("oai:record/oai:metadata/arxiv:arXiv", _NS)
     )
+    # The last page of a longer list still carries the element, empty.
     token = records.find("oai:resumptionToken", _NS)
-    size = token.get("completeListSize") if token is not None else None
-    total = int(size) if size is not None and size.isdigit() else len(papers)
-    return Listing(papers=papers, total=total)
+    following = (token.text or "").strip() if token is not None else ""
+    return Listing(papers=papers, resumption_token=following or None)
 
 
-async def fetch_listing(
-    client: httpx.AsyncClient, category: str, since: date, until: date
-) -> Listing:
-    """One request. The caller owns the client, and with it timeouts and transport."""
+async def fetch_page(client: httpx.AsyncClient, params: dict[str, str]) -> Listing:
+    """One request, for `first_page(...)` or `next_page(...)`.
+
+    The caller owns the client, and with it timeouts and transport.
+    """
     try:
-        response = await client.get(OAI_URL, params=request_params(category, since, until))
+        response = await client.get(OAI_URL, params=params)
         response.raise_for_status()
     except httpx.HTTPError as error:
         raise ListingError(f"arXiv request failed: {error}") from error

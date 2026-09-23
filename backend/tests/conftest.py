@@ -102,7 +102,8 @@ def passphrase_hash() -> str:
 
 @pytest.fixture
 def settings(database_url: str) -> Settings:
-    return Settings(database_url=database_url, passphrase_hash=PASSPHRASE_HASH)
+    # No background worker: tests drive harvesting one step at a time.
+    return Settings(database_url=database_url, passphrase_hash=PASSPHRASE_HASH, worker=False)
 
 
 @pytest.fixture
@@ -146,7 +147,7 @@ async def closed(database_url: str) -> AsyncIterator[AsyncClient]:
     The hash is blanked explicitly, so a developer's own .env cannot turn the
     fail-closed case into the configured one.
     """
-    settings = Settings(database_url=database_url, passphrase_hash="")
+    settings = Settings(database_url=database_url, passphrase_hash="", worker=False)
     async with _serving(create_app(settings)) as http:
         yield http
 
@@ -167,6 +168,8 @@ async def clean_tables(database_url: str) -> AsyncIterator[None]:
     plain = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
     connection = await asyncpg.connect(plain)
     try:
-        await connection.execute("truncate table papers restart identity cascade")
+        await connection.execute(
+            "truncate table batch_items, batches, papers restart identity cascade"
+        )
     finally:
         await connection.close()

@@ -126,8 +126,32 @@ OAI-PMH is arXiv's recommended channel for bulk metadata anyway.
 
 Two consequences. A window selects records by datestamp, the day a record last
 changed, so it catches revised papers as well as new ones. And a response is one
-page with a resumption token when more match; `BatchResult.matched` reports the
-whole count.
+page with a resumption token when more match. There is no reliable total:
+`completeListSize` turns out to be the size of the page in hand, so a batch
+reports pages and papers so far, and is done when a page arrives without a token.
+
+## Batches and workers
+
+`POST /batches` only queues. Workers harvest, and every API process runs one
+(`SIFT_WORKER=false` turns it off). They coordinate through the `batches` table
+alone, with no queue in between:
+
+- A step claims the oldest due batch with `SELECT … FOR UPDATE SKIP LOCKED`, so
+  concurrent workers never take the same one, and stamps it with a lease: a
+  fresh UUID and an expiry.
+- It fetches one listing page with no transaction open, then records the page —
+  papers, items, the next resumption token — in one transaction guarded by the
+  lease UUID, and releases the batch with `not_before` set one page interval
+  ahead. That interval is what paces a harvest.
+- A worker that dies or hangs simply stops renewing. Once its lease expires the
+  next claim takes the batch and resumes from the last recorded token; the dead
+  worker's late writes no longer match the lease and are refused.
+- Failures are counted per batch: retryable ones back off and try again, a
+  request arXiv rejects fails the batch at once.
+
+At-least-once per page, idempotent writes (papers on arXiv id, items on batch
+and paper), no lost work. SQS or similar becomes worth it when the database
+stops being a comfortable place to poll — not at this scale.
 
 ## Running it
 

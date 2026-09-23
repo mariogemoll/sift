@@ -28,6 +28,20 @@ class Settings(BaseSettings):
     """Mark the session cookie Secure. False for plain-HTTP localhost; true in
     production, where the browser reaches the edge over HTTPS."""
 
+    worker: bool = True
+    """Run a harvest worker inside the API process. Every process that runs one
+    takes part; they coordinate through the database, not with each other."""
+
+    lease_seconds: float = 120.0
+    """How long a worker may hold a batch without recording progress. Must outlast
+    one listing request, HTTP timeout included."""
+
+    page_interval_seconds: float = 3.0
+    """The pause between two listing pages of one batch, to go easy on arXiv."""
+
+    idle_poll_seconds: float = 2.0
+    """How often an idle worker looks for work."""
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

@@ -1,7 +1,8 @@
 """The domain vocabulary. Stdlib only, so importing it costs nothing."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
+from typing import Literal
 
 
 @dataclass(frozen=True, slots=True)
@@ -14,6 +15,32 @@ class Paper:
     categories: tuple[str, ...]
     published_at: datetime
     abstract: str
+
+
+BatchState = Literal["queued", "harvesting", "done", "failed"]
+
+
+@dataclass(frozen=True, slots=True)
+class Batch:
+    """A harvest of one category over a window, and how far it has got.
+
+    `added` counts papers new to the system; `items` counts every paper the batch
+    has seen. arXiv does not say how many records a window holds in all, so there
+    is no total to count towards: a batch is done when the last page arrives.
+    """
+
+    id: int
+    category: str
+    since: date
+    until: date
+    state: BatchState
+    pages: int
+    added: int
+    items: int
+    attempts: int
+    last_error: str | None
+    created_at: datetime
+    finished_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)

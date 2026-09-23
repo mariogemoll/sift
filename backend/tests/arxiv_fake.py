@@ -8,15 +8,23 @@ import httpx
 
 @dataclass
 class FakeArxiv:
-    """Answers every request with `status` and `body`, and remembers what it was asked."""
+    """Answers with `status` and `body`, and remembers what it was asked.
+
+    A request carrying a resumption token is answered from `pages` instead, so a
+    test can lay out a listing that runs over several pages.
+    """
 
     status: int = 200
     body: str = ""
+    pages: dict[str, str] = field(default_factory=dict)
     requests: list[httpx.Request] = field(default_factory=list)
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
-        return httpx.Response(self.status, text=self.body)
+        token = request.url.params.get("resumptionToken")
+        if self.status != 200 or token is None:
+            return httpx.Response(self.status, text=self.body)
+        return httpx.Response(200, text=self.pages[token])
 
 
 @dataclass(frozen=True)
@@ -53,15 +61,18 @@ def _record(entry: Entry) -> str:
     )
 
 
-def records(*entries: Entry, total: int | None = None) -> str:
-    """A ListRecords page. With `total`, it carries a resumption token promising more."""
-    token = (
-        f'<resumptionToken completeListSize="{total}" cursor="0">next</resumptionToken>'
-        if total is not None
+def records(*entries: Entry, token: str | None = None) -> str:
+    """A ListRecords page. With `token`, it carries a resumption token; an empty one ends the list.
+
+    arXiv puts the size of the page in hand into `completeListSize`, so the fake does too.
+    """
+    resumption = (
+        f'<resumptionToken completeListSize="{len(entries)}" cursor="0">{token}</resumptionToken>'
+        if token is not None
         else ""
     )
     return _ENVELOPE.format(
-        f"<ListRecords>{''.join(_record(entry) for entry in entries)}{token}</ListRecords>"
+        f"<ListRecords>{''.join(_record(entry) for entry in entries)}{resumption}</ListRecords>"
     )
 
 

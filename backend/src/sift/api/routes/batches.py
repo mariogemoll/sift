@@ -1,36 +1,39 @@
-"""Submitting work: pull a window of arXiv listings into the papers table."""
+"""Submitting work and watching it. A worker does the harvesting; these only read and queue."""
 
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
-from sift.api.deps import Http, Session
-from sift.api.schemas import BatchRequest, BatchResult
-from sift.ingest.listing import ListingError, QueryRejected, fetch_listing
-from sift.storage.papers import add_papers
+from sift.api.deps import Session
+from sift.api.schemas import BatchOut, BatchRequest
+from sift.storage.batches import create_batch, get_batch, list_batches
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
 
-@router.post("")
-async def create_batch(request: BatchRequest, session: Session, http: Http) -> BatchResult:
-    """Fetch the listing and store what is new, before answering."""
+@router.post("", status_code=status.HTTP_202_ACCEPTED)
+async def submit_batch(request: BatchRequest, session: Session) -> BatchOut:
+    """Queue a harvest. The window closes today, so the batch means the same thing when it runs."""
     until = datetime.now(UTC).date()
     if request.since > until:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "since is in the future")
-    try:
-        listing = await fetch_listing(http, request.category, request.since, until)
-    except QueryRejected as error:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
-    except ListingError as error:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(error)) from error
-    added = await add_papers(session, listing.papers)
+    batch = await create_batch(session, request.category, request.since, until)
     await session.commit()
-    return BatchResult(
-        category=request.category,
-        since=request.since,
-        until=until,
-        matched=listing.total,
-        fetched=len(listing.papers),
-        added=added,
-    )
+    return BatchOut.of(batch)
+
+
+@router.get("")
+async def get_batches(
+    session: Session, limit: Annotated[int, Query(ge=1, le=100)] = 20
+) -> list[BatchOut]:
+    """The most recent batches, newest first."""
+    return [BatchOut.of(batch) for batch in await list_batches(session, limit=limit)]
+
+
+@router.get("/{batch_id}")
+async def get_one_batch(batch_id: int, session: Session) -> BatchOut:
+    batch = await get_batch(session, batch_id)
+    if batch is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such batch")
+    return BatchOut.of(batch)

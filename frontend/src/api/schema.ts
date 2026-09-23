@@ -33,13 +33,34 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get Batches
+         * @description The most recent batches, newest first.
+         */
+        get: operations["get_batches_batches_get"];
         put?: never;
         /**
-         * Create Batch
-         * @description Fetch the listing and store what is new, before answering.
+         * Submit Batch
+         * @description Queue a harvest. The window closes today, so the batch means the same thing when it runs.
          */
-        post: operations["create_batch_batches_post"];
+        post: operations["submit_batch_batches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Batch */
+        get: operations["get_one_batch_batches__batch_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -85,6 +106,52 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * BatchOut
+         * @description A batch and how far it has got.
+         *
+         *     `added` counts papers new to the system; `items` counts every paper the batch
+         *     has seen. `attempts` and `last_error` describe failures since the last page
+         *     that succeeded.
+         */
+        BatchOut: {
+            /** Added */
+            added: number;
+            /** Attempts */
+            attempts: number;
+            /** Category */
+            category: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Id */
+            id: number;
+            /** Items */
+            items: number;
+            /** Last Error */
+            last_error: string | null;
+            /** Pages */
+            pages: number;
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "queued" | "harvesting" | "done" | "failed";
+            /**
+             * Until
+             * Format: date
+             */
+            until: string;
+        };
+        /**
          * BatchRequest
          * @description Which papers to pull in: one arXiv category, new or revised on or after a date.
          */
@@ -99,30 +166,6 @@ export interface components {
              * Format: date
              */
             since: string;
-        };
-        /**
-         * BatchResult
-         * @description What a batch did. `matched` exceeds `fetched` when the window spans more than one page.
-         */
-        BatchResult: {
-            /** Added */
-            added: number;
-            /** Category */
-            category: string;
-            /** Fetched */
-            fetched: number;
-            /** Matched */
-            matched: number;
-            /**
-             * Since
-             * Format: date
-             */
-            since: string;
-            /**
-             * Until
-             * Format: date
-             */
-            until: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -287,7 +330,38 @@ export interface operations {
             };
         };
     };
-    create_batch_batches_post: {
+    get_batches_batches_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_batch_batches_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -301,12 +375,43 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_batch_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchResult"];
+                    "application/json": components["schemas"]["BatchOut"];
                 };
             };
             /** @description Validation Error */

@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from sift.core.types import Page, Paper
+from sift.core.types import Batch, BatchState, Page, Paper
 from sift.ingest.listing import valid_category
 
 
@@ -85,12 +85,40 @@ class BatchRequest(BaseModel):
         return category
 
 
-class BatchResult(BaseModel):
-    """What a batch did. `matched` exceeds `fetched` when the window spans more than one page."""
+class BatchOut(BaseModel):
+    """A batch and how far it has got.
 
+    `added` counts papers new to the system; `items` counts every paper the batch
+    has seen. `attempts` and `last_error` describe failures since the last page
+    that succeeded.
+    """
+
+    id: int
     category: str
     since: date
     until: date
-    matched: int
-    fetched: int
+    state: BatchState
+    pages: int
     added: int
+    items: int
+    attempts: int
+    last_error: str | None
+    created_at: datetime
+    finished_at: datetime | None
+
+    @staticmethod
+    def of(batch: Batch) -> "BatchOut":
+        return BatchOut(
+            id=batch.id,
+            category=batch.category,
+            since=batch.since,
+            until=batch.until,
+            state=batch.state,
+            pages=batch.pages,
+            added=batch.added,
+            items=batch.items,
+            attempts=batch.attempts,
+            last_error=batch.last_error,
+            created_at=batch.created_at,
+            finished_at=batch.finished_at,
+        )

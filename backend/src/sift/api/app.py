@@ -1,8 +1,10 @@
 """The FastAPI application factory."""
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import timedelta
 
 import httpx
 from fastapi import Depends, FastAPI
@@ -10,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from sift.api import gate
 from sift.api.routes import auth, batches, health, papers
+from sift.pipeline.harvest import Pacing, run_worker
 from sift.settings import Settings, get_settings
 from sift.storage.engine import create_engine, create_session_factory
 
@@ -18,6 +21,14 @@ logger = logging.getLogger(__name__)
 
 # arXiv asks API clients to identify themselves.
 USER_AGENT = "sift/0.1"
+
+
+def _pacing(settings: Settings) -> Pacing:
+    return Pacing(
+        lease=timedelta(seconds=settings.lease_seconds),
+        between_pages=timedelta(seconds=settings.page_interval_seconds),
+        idle_poll=timedelta(seconds=settings.idle_poll_seconds),
+    )
 
 
 def create_app(
@@ -43,9 +54,21 @@ def create_app(
             follow_redirects=True,
         ) as http:
             app.state.http = http
+            stop = asyncio.Event()
+            worker = (
+                asyncio.create_task(
+                    run_worker(app.state.session_factory, http, _pacing(resolved), stop),
+                    name="harvest worker",
+                )
+                if resolved.worker
+                else None
+            )
             try:
                 yield
             finally:
+                stop.set()
+                if worker is not None:
+                    await worker
                 await engine.dispose()
 
     app = FastAPI(
