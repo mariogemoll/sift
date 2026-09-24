@@ -52,12 +52,31 @@ resource "aws_iam_role_policy" "execution_secrets" {
   })
 }
 
-# The application's own role. It needs nothing yet; it exists so that the day
-# the service calls an AWS API, the grant has an obvious home that is not the
-# execution role.
+# The role of the running task. The application calls no AWS API; the only
+# grant is the Session Manager channel that ECS Exec, and so db-tunnel.sh,
+# relies on.
 resource "aws_iam_role" "task" {
   name               = "${var.name}-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume.json
+}
+
+resource "aws_iam_role_policy" "task_exec" {
+  name = "ecs-exec"
+  role = aws_iam_role.task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel",
+      ]
+      Resource = "*"
+    }]
+  })
 }
 
 locals {
@@ -195,6 +214,10 @@ resource "aws_ecs_service" "api" {
   }
 
   health_check_grace_period_seconds = 30
+
+  # Session Manager into the running task, which is also the only path from a
+  # laptop to the database (db-tunnel.sh).
+  enable_execute_command = true
 
   # A deployment that never reaches a healthy target rolls itself back rather
   # than leaving the service half-replaced.

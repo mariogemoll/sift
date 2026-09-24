@@ -56,7 +56,7 @@ replaced:
 
 ```sh
 terraform apply
-aws ecs update-service --cluster sift --service sift --force-new-deployment
+aws ecs update-service --cluster sift --service sift --force-new-deployment --region eu-west-2
 ```
 
 Everyone signed in with the old passphrase is signed out by that, including you.
@@ -187,6 +187,24 @@ publicly reachable, so the script runs as a one-off Fargate task on the
 service's current task definition and in its network, the way the deploy runs
 migrations, then prints the exit code and the paper count before and after.
 The running service keeps going and simply finds nothing to do.
+
+## Reaching the database
+
+```sh
+brew install --cask session-manager-plugin     # once
+./db-tunnel.sh                                 # localhost:15432 until Ctrl-C
+```
+
+The database accepts connections from the service's tasks only, so the script
+forwards a local port through the running API task using ECS Exec (Session
+Manager) — no bastion, no open port, no VPC endpoints, and nothing extra to pay
+for. Point a client such as DBeaver at `localhost:15432`, database and user
+`sift`; the script prints the command that reads the password from Secrets
+Manager.
+
+The tunnel lives inside a task, so a deploy that replaces the task closes it;
+run the script again. ECS Exec applies only to tasks started after it was
+enabled, so after the first apply that enables it, force a new deployment.
 
 ## Tearing it down
 
